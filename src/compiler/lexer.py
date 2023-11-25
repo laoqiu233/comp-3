@@ -79,7 +79,7 @@ class Lexer:
                 while re.match(r'[0-9]', (char := self.io.read(1))) is not None:
                     num += char
                 self.io.seek(self.io.tell() - 1)
-                if re.match(r'\s', char) is None:
+                if re.match(r'[\s\(\)]', char) is None:
                     raise ValueError(f"Unexpected character '{char}' at line {self.line} col {self.pos+len(num)}")
                 tokens.append(Token(
                     token_type=TokenType.INT_LITERAL,
@@ -110,4 +110,13 @@ class Lexer:
                     ))
                 self.pos += len(identifier)
 
+        if nest_level != 0:
+            raise ValueError('Unexpected EOF')
+
         return tokens
+    
+if __name__ == '__main__':
+    with open('examples/cat.lisq') as file:
+        lexer = Lexer(file)
+        for token in lexer.lex():
+            print(token.model_dump_json())

@@ -1,6 +1,7 @@
-(let (a 0)
+(let ((a 0))
     (set a (get_char))
     (loop while (!= a 0) do
         (put_char a)
+        (set a (get_char))
     )
 )

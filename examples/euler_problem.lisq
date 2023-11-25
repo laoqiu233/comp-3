@@ -1,19 +1,21 @@
 (defun remainder (devidend divisor) 
   (loop while (>= devidend divisor) do
-    (setq devidend (- devidend divisor))
+    (set devidend (- devidend divisor))
   )
   devidend
 )
 
-(let ((a 0) (result false))
+(let ((a 0) (result false) (b 0))
     (loop while (= result false) do 
         (set a (+ a 1))
         (set result true)
-        (loop for b from 1 to 20 do 
+        (set b 1)
+        (loop while (<= b 20) do 
             (if (!= (remainder a b) 0)
                 (set result false)
             )
+            (set b (+ b 1))
         )
     )
-    (print_int a)
+    (put_char a)
 )
