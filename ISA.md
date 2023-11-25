@@ -12,6 +12,7 @@ The JSON object consists of the following fields:
     - address
     - pointer_address
     - stack_offset
+    - no_operand
 - operand
 
 ## Instructions
@@ -29,15 +30,17 @@ The JSON object consists of the following fields:
     - ST operand
 
 - Stack manipulation
-    - PUSH operand
-    - POP
+    - PUSH
+    - POP (The popped element is discarded)
 
 - Branching
     - CMP operand
     - JZ addr
     - JNZ addr
-    - JLT addr
-    - JGT addr
+    - JB addr
+    - JBE addr
+    - JA addr
+    - JAE adde
     - JMP addr
 
 ## ALU operations

@@ -1,10 +1,48 @@
 from enum import Enum
-from lexer import TokenType, Token, Lexer
+from comp3.compiler.lexer import TokenType, Token, Lexer
 from abc import abstractmethod, ABC
 from typing import Optional
 
 class AstBackend(ABC):
-    pass
+    @abstractmethod
+    def visit(self, node: 'AstNode'):
+        pass
+
+    @abstractmethod
+    def visit_let_var_node(self, node: 'LetVarNode'):
+        pass
+
+    @abstractmethod
+    def visit_let_node(self, node: 'LetNode'):
+        pass
+
+    @abstractmethod
+    def visit_set_node(self, node: 'SetNode'):
+        pass
+
+    @abstractmethod
+    def visit_loop_while_node(self, node: 'LoopWhileNode'):
+        pass
+
+    @abstractmethod
+    def visit_math_node(self, node: 'MathNode'):
+        pass
+
+    @abstractmethod
+    def visit_get_char_node(self, node: 'GetCharNode'):
+        pass
+
+    @abstractmethod
+    def visit_put_char_node(self, node: 'PutCharNode'):
+        pass
+
+    @abstractmethod
+    def visit_int_literal_node(self, node: 'IntLiteralNode'):
+        pass
+
+    @abstractmethod
+    def visit_load_by_identifier_node(self, node: 'LoadByIdentifierNode'):
+        pass
 
 class AstNode(ABC):
     @abstractmethod
@@ -17,7 +55,7 @@ class LetVarNode(AstNode):
         self.load_value = load_value
 
     def compile(self, backend: AstBackend):
-        pass
+        backend.visit_let_var_node(self)
 
     def __str__(self) -> str:
         return f'''{self.identifier} = {self.load_value}'''
@@ -34,7 +72,7 @@ class LetNode(AstNode):
         self.body.append(node)
 
     def compile(self, backend: AstBackend):
-        pass
+        backend.visit_let_node(self)
 
     def __str__(self) -> str:
         s = f'''(
@@ -57,7 +95,7 @@ class SetNode(AstNode):
         self.load_value = load_value
 
     def compile(self, backend: AstBackend):
-        pass
+        backend.visit_set_node(self)
 
     def __str__(self) -> str:
         return f'''(
@@ -74,7 +112,7 @@ class LoopWhileNode(AstNode):
         self.body = body
 
     def compile(self, backend: AstBackend):
-        pass
+        backend.visit_loop_while_node(self)
 
     def __str__(self) -> str:
         s = f'''(
@@ -93,7 +131,7 @@ class GetCharNode(AstNode):
         self.end_token = end_token
 
     def compile(self, backend: AstBackend):
-        pass
+        backend.visit_get_char_node(self)
 
     def __str__(self) -> str:
         return f'get_char ({self.start_token.line}-{self.start_token.pos} to {self.end_token.line}-{self.end_token.pos})'
@@ -105,7 +143,7 @@ class PutCharNode(AstNode):
         self.load_value = load_value
 
     def compile(self, backend: AstBackend):
-        pass
+        backend.visit_put_char_node(self)
 
     def __str__(self) -> str:
         return f'''(
@@ -133,7 +171,7 @@ class MathNode(AstNode):
         self.op = op
 
     def compile(self, backend: AstBackend):
-        pass
+        backend.visit_math_node(self)
 
     def __str__(self) -> str:
         s = f'''(
@@ -213,6 +251,19 @@ class FuncCallNode(AstNode):
         s += '\t)\n)'
 
         return s
+    
+class StrAllocNode(AstNode):
+    def __init__(self, start_token: Token, end_token: Token, identifier: str, size: int):
+        self.start_token = start_token
+        self.end_token = end_token
+        self.identifier = identifier
+        self.size = size
+
+    def compile(self, backend: AstBackend):
+        pass
+
+    def __str__(self) -> str:
+        return f'(alloc_str {self.identifier} {self.size} chars)'
 
 class IntLiteralNode(AstNode):
     def __init__(self, token: Token, value: int):
@@ -220,7 +271,7 @@ class IntLiteralNode(AstNode):
         self.value = value
 
     def compile(self, backend: AstBackend):
-        pass
+        backend.visit_int_literal_node(self)
 
     def __str__(self) -> str:
         return str(self.value)
@@ -242,7 +293,7 @@ class LoadByIdentifierNode(AstNode):
         self.identifier = identifier
 
     def compile(self, backend: AstBackend):
-        pass
+        backend.visit_load_by_identifier_node(self)
 
     def __str__(self) -> str:
         return f'({self.identifier})'
@@ -399,6 +450,18 @@ class AstBuilder:
                     if self._peek_next_token().token_type != TokenType.RIGHT_PARENTHESIS:
                         false_expr = self.parse_node()
                     return IfNode(start_token, self._try_get_end_token(), condition, true_expr, false_expr)
+                elif token.value == 'alloc_str':
+                    # Only allow string buffer allocation in global scope
+                    if not is_global:
+                        raise ValueError(f'Unexpected string allocation at line {token.line} col {token.pos}, string allocation is only allowed in the global scope')
+
+                    str_id = self._get_next_token()
+                    if str_id.token_type != TokenType.IDENTIFIER:
+                        raise unexpected_token(str_id, 'an identifier')
+                    size = self._get_next_token()
+                    if size.token_type != TokenType.INT_LITERAL:
+                        raise unexpected_token(size, 'an integer')
+                    return StrAllocNode(start_token, self._try_get_end_token(), str_id.value, int(size.value))
                 else:
                     # (func_identifier [params])
                     params: list[AstNode] = []
@@ -420,18 +483,19 @@ class AstBuilder:
         elif token.token_type == TokenType.IDENTIFIER:
             return LoadByIdentifierNode(token, token.value)
 
-        raise unexpected_token(token, 'dmitrik to write better code')            
+        raise unexpected_token(token, 'dmitrik to write better code')   
+
+def build_nodes_from_tokens(tokens: list[Token]):
+    builder = AstBuilder(tokens)
+    nodes: list[AstNode] = []
+
+    while not builder.is_eof():
+        nodes.append(builder.parse_node(True))
+
+    return nodes       
 
 if __name__ == '__main__':
-    with open("examples/euler_problem.lisq") as file:
+    with open("examples/hello_user_name.lisq") as file:
         lexer = Lexer(file)
         tokens = lexer.lex()
-        builder = AstBuilder(tokens)
-
-        nodes: list[AstNode] = []
-        
-        while not builder.is_eof():
-            node = builder.parse_node(True)
-            nodes.append(node)
-
-        print(*nodes, sep='\n\n')
+        print(*build_nodes_from_tokens(tokens), sep='\n\n')

@@ -1,0 +1,99 @@
+{
+    "instructions": [
+        {
+            "op_code": "LD",
+            "operand_type": "immediate",
+            "operand": 0
+        },
+        {
+            "op_code": "PUSH",
+            "operand_type": "no_operand",
+            "operand": 0
+        },
+        {
+            "op_code": "LD",
+            "operand_type": "address",
+            "operand": 69
+        },
+        {
+            "op_code": "ST",
+            "operand_type": "stack_offset",
+            "operand": 1
+        },
+        {
+            "op_code": "LD",
+            "operand_type": "immediate",
+            "operand": 0
+        },
+        {
+            "op_code": "PUSH",
+            "operand_type": "no_operand",
+            "operand": 0
+        },
+        {
+            "op_code": "LD",
+            "operand_type": "stack_offset",
+            "operand": 2
+        },
+        {
+            "op_code": "CMP",
+            "operand_type": "stack_offset",
+            "operand": 1
+        },
+        {
+            "op_code": "LD",
+            "operand_type": "immediate",
+            "operand": 1
+        },
+        {
+            "op_code": "JNZ",
+            "operand_type": "address",
+            "operand": 11
+        },
+        {
+            "op_code": "LD",
+            "operand_type": "immediate",
+            "operand": 0
+        },
+        {
+            "op_code": "POP",
+            "operand_type": "no_operand",
+            "operand": 0
+        },
+        {
+            "op_code": "JZ",
+            "operand_type": "address",
+            "operand": 17
+        },
+        {
+            "op_code": "LD",
+            "operand_type": "stack_offset",
+            "operand": 1
+        },
+        {
+            "op_code": "ST",
+            "operand_type": "address",
+            "operand": 42
+        },
+        {
+            "op_code": "LD",
+            "operand_type": "address",
+            "operand": 69
+        },
+        {
+            "op_code": "ST",
+            "operand_type": "stack_offset",
+            "operand": 1
+        },
+        {
+            "op_code": "JMP",
+            "operand_type": "address",
+            "operand": 4
+        },
+        {
+            "op_code": "POP",
+            "operand_type": "no_operand",
+            "operand": 0
+        }
+    ]
+}
