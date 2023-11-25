@@ -1,0 +1,12 @@
+(alloc_str username 100)
+
+(let ((i 0) (char 0))
+    (set char (get_char))
+    (loop while (& (< i 100) (!= char 0)) do
+        (set_str user_name i char)
+        (set i (+ i 1))
+    )
+    (print_str "hello, ")
+    (print_str username)
+    (print_str "!")
+)
