@@ -3,6 +3,8 @@
 (defun set_str (a b c))
 (defun print_str (a))
 
+#include examples/cat.lisq
+
 (let ((i 0) (char 0))
     (set char (get_char))
     (loop while (& (< i 100) (!= char 0)) do
