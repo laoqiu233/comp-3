@@ -1,5 +1,3 @@
-from typing import Callable
-
 from comp3.common.instructions import (
     DataStubInstruction,
     DataWord,
@@ -61,16 +59,16 @@ class Comp3Backend(AstBackend):
         self.stack_identifiers.append(node.identifier)
 
     def visit_let_node(self, node: LetNode):
-        for var in node.vars:
+        for var in node.var_nodes:
             var.compile(self)
 
         for body_expr in node.body:
             body_expr.compile(self)
 
-        for var in node.vars[::-1]:
+        for var in node.var_nodes[::-1]:
             if self.stack_identifiers[-1] != var.identifier:
                 raise ValueError(
-                    f"DEBUG: Stack pop identifiers did not match, this should not happen"
+                    "DEBUG: Stack pop identifiers did not match, this should not happen"
                 )
             self.stack_identifiers.pop()
             self.program.append(
@@ -96,7 +94,8 @@ class Comp3Backend(AstBackend):
             )
         else:
             raise ValueError(
-                f"Unkonwn identifier {node.identifier} found at line {node.start_token.line} col {node.start_token.pos}"
+                f"Unkonwn identifier {node.identifier} found at line {node.start_token.line} col"
+                f" {node.start_token.pos}"
             )
 
     def visit_loop_while_node(self, node: LoopWhileNode):
@@ -237,9 +236,7 @@ class Comp3Backend(AstBackend):
         )
 
         if self.stack_identifiers.pop() != "":
-            raise ValueError(
-                f"DEBUG: Stack pop identifiers did not match, this should not happen"
-            )
+            raise ValueError("DEBUG: Stack pop identifiers did not match, this should not happen")
 
     def visit_get_char_node(self, node: GetCharNode):
         self.program.append(
@@ -322,7 +319,7 @@ class Comp3Backend(AstBackend):
         for param_id in node.param_identifiers[::-1]:
             if self.stack_identifiers.pop() != param_id:
                 raise ValueError(
-                    f"DEBUG: Stack pop identifiers did not match, this should not happen"
+                    "DEBUG: Stack pop identifiers did not match, this should not happen"
                 )
 
         self.program[func_start_index].instr_id = node.identifier
@@ -362,9 +359,7 @@ class Comp3Backend(AstBackend):
                     comment=f"push parameter {index} onto stack",
                 )
             )
-            self.stack_identifiers.append(
-                ""
-            )  # Param is pushed onto the stack, should be anonymous
+            self.stack_identifiers.append("")  # Param is pushed onto the stack, should be anonymous
 
         self.program.append(
             InstrStubInstruction(
@@ -389,7 +384,7 @@ class Comp3Backend(AstBackend):
             )
             if self.stack_identifiers.pop() != "":
                 raise ValueError(
-                    f"DEBUG: Stack pop identifiers did not match, this should not happen"
+                    "DEBUG: Stack pop identifiers did not match, this should not happen"
                 )
 
         self.program.append(
@@ -401,9 +396,7 @@ class Comp3Backend(AstBackend):
             )
         )
         if self.stack_identifiers.pop() != " ret_address":
-            raise ValueError(
-                f"DEBUG: Stack pop identifiers did not match, this should not happen"
-            )
+            raise ValueError("DEBUG: Stack pop identifiers did not match, this should not happen")
 
     def visit_string_literal_node(self, node: StringLiteralNode):
         self.string_literals.add(node.value)
@@ -421,7 +414,9 @@ class Comp3Backend(AstBackend):
     def visit_str_alloc_node(self, node: StrAllocNode):
         if node.identifier in self.string_buffers:
             raise ValueError(
-                f"Invalid string buffer declaration at line {node.start_token.line} col {node.start_token.pos}, identifier {node.identifier} was already declared previously"
+                f"Invalid string buffer declaration at line {node.start_token.line} col"
+                f" {node.start_token.pos}, identifier {node.identifier} was already declared"
+                " previously"
             )
 
         self.string_buffers[node.identifier] = node.size
@@ -484,99 +479,111 @@ def replace_stubs(program: Program):
         if data.identifier is not None:
             data_id_address[data.identifier] = index
 
-    for i in range(len(program.instructions)):
-        instr = program.instructions[i]
+    for index, instr in enumerate(program.instructions):
         if isinstance(instr, InstrStubInstruction):
             if instr.referenced_instr_id not in instr_id_address:
                 raise ValueError(
-                    f"Instruction stub identifier {instr.referenced_instr_id} in instruction {i} was not found in compiled program"
+                    f"Instruction stub identifier {instr.referenced_instr_id} in instruction"
+                    f" {index} was not found in compiled program"
                 )
             referenced_addr = (
-                instr_id_address[instr.referenced_instr_id]
-                + instr.referenced_instr_offset
+                instr_id_address[instr.referenced_instr_id] + instr.referenced_instr_offset
             )
-            program.instructions[i] = Instruction(
-                op_code=program.instructions[i].op_code,
-                operand_type=program.instructions[i].operand_type,
+            program.instructions[index] = Instruction(
+                op_code=instr.op_code,
+                operand_type=instr.operand_type,
                 operand=referenced_addr,
-                comment=program.instructions[i].comment,
+                comment=instr.comment,
             )
         elif isinstance(instr, DataStubInstruction):
             if instr.data_stub_identifier not in data_id_address:
                 raise ValueError(
-                    f"Data stub identifier {instr.data_stub_identifier} in instruction {i} was not found in compiled program"
+                    f"Data stub identifier {instr.data_stub_identifier} in instruction {index} was"
+                    " not found in compiled program"
                 )
-            program.instructions[i] = Instruction(
-                op_code=program.instructions[i].op_code,
-                operand_type=program.instructions[i].operand_type,
+            program.instructions[index] = Instruction(
+                op_code=instr.op_code,
+                operand_type=instr.operand_type,
                 operand=data_id_address[instr.data_stub_identifier],
-                comment=program.instructions[i].comment,
+                comment=instr.comment,
             )
 
 
-def build_program_from_nodes(nodes: list[AstNode]) -> Program:
-    instructions: list[Instruction] = []
-    string_literals: set[str] = set()
-    string_buffers: dict[str, int] = {}
+def is_global(node: AstNode) -> bool:
+    return isinstance(node, (FuncNode, StrAllocNode))
 
-    is_global: Callable[[AstNode], bool] = lambda x: isinstance(
-        x, FuncNode
-    ) or isinstance(x, StrAllocNode)
 
-    def process_backend_results(backend: Comp3Backend):
-        nonlocal instructions, string_literals, string_buffers
-        instructions += backend.program
-        for literal in backend.string_literals:
-            string_literals.add(literal)
-        for identifier, size in backend.string_buffers.items():
-            if identifier in string_buffers:
-                raise ValueError(
-                    f"String buffer identifier {identifier} was declared more than one time"
-                )
-            string_buffers[identifier] = size
-
-    # Process all global declarations first
-    for node in filter(is_global, nodes):
-        backend = Comp3Backend()
-        backend.visit(node)
-        process_backend_results(backend)
-
-    program_start = len(instructions)
-
-    # Process everything else
-    for node in filter(lambda x: not is_global(x), nodes):
-        backend = Comp3Backend()
-        backend.visit(node)
-        process_backend_results(backend)
-
-    instructions.append(
-        Instruction(op_code=OpCode.HLT, operand_type=OperandType.NO_OPERAND, operand=0)
-    )
-
-    # Build data memory
-    data_memory: list[DataWord] = []
-
-    for literal in string_literals:
-        literal_addr = len(data_memory)
-        for char in literal:
-            data_memory.append(DataWord(value=ord(char)))
-        # C-string end
-        data_memory.append(DataWord(value=0))
-        data_memory[literal_addr].identifier = literal
-
-    for buffer_identifier, size in string_buffers.items():
-        buffer_addr = len(data_memory)
-        for _ in range(size):
-            data_memory.append(DataWord(value=0))
-        data_memory[buffer_addr].identifier = buffer_identifier
-
-    program = Program(
-        start_addr=program_start, instructions=instructions, data_memory=data_memory
-    )
-
-    replace_stubs(program)
-
+def index_instructions(program: Program):
     for index, instr in enumerate(program.instructions):
         instr.instr_index = index
 
-    return program
+
+class CompilerFacade:
+    def __init__(self):
+        self.instructions: list[Instruction] = []
+        self.string_literals: set[str] = set()
+        self.string_buffers: dict[str, int] = {}
+
+    def process_backend_results(self, backend: Comp3Backend):
+        self.instructions += backend.program
+        for literal in backend.string_literals:
+            self.string_literals.add(literal)
+        for identifier, size in backend.string_buffers.items():
+            if identifier in self.string_buffers:
+                raise ValueError(
+                    f"String buffer identifier {identifier} was declared more than one time"
+                )
+            self.string_buffers[identifier] = size
+
+    def build_data_memory(self) -> list[DataWord]:
+        data_memory: list[DataWord] = []
+
+        for literal in self.string_literals:
+            literal_addr = len(data_memory)
+            for char in literal:
+                data_memory.append(DataWord(value=ord(char)))
+            # C-string end
+            data_memory.append(DataWord(value=0))
+            data_memory[literal_addr].identifier = literal
+
+        for buffer_identifier, size in self.string_buffers.items():
+            buffer_addr = len(data_memory)
+            for _ in range(size):
+                data_memory.append(DataWord(value=0))
+            data_memory[buffer_addr].identifier = buffer_identifier
+
+        return data_memory
+
+    def build_program(self, nodes: list[AstNode]):
+        # Process all global declarations first
+        for node in filter(is_global, nodes):
+            backend = Comp3Backend()
+            backend.visit(node)
+            self.process_backend_results(backend)
+
+        program_start = len(self.instructions)
+
+        # Process everything else
+        for node in filter(lambda x: not is_global(x), nodes):
+            backend = Comp3Backend()
+            backend.visit(node)
+            self.process_backend_results(backend)
+
+        self.instructions.append(
+            Instruction(op_code=OpCode.HLT, operand_type=OperandType.NO_OPERAND, operand=0)
+        )
+
+        data_memory = self.build_data_memory()
+
+        program = Program(
+            start_addr=program_start, instructions=self.instructions, data_memory=data_memory
+        )
+        replace_stubs(program)
+        index_instructions(program)
+
+        return program
+
+
+def build_program_from_nodes(nodes: list[AstNode]) -> Program:
+    facade = CompilerFacade()
+    return facade.build_program(nodes)

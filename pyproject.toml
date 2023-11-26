@@ -15,6 +15,25 @@ pylint = "^3.0.2"
 isort = "^5.12.0"
 black = "^23.11.0"
 
+[tool.pylint."MESSAGES CONTROL"]
+disable = [
+  "C0114",  # missing-module-docstring
+  "C0116",  # missing-function-docstring
+  "C0115",  # missing-class-docstring
+]
+
+[tool.black]
+line-length = 100
+target-version = ['py311']
+preview = true
+
+[tool.isort]
+known_local_folder = 'comp3'
+lines_after_imports = 2
+multi_line_output = 3
+line_length = 100
+include_trailing_comma = true
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
