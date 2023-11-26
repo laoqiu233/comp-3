@@ -43,6 +43,9 @@ The JSON object consists of the following fields:
     - JAE adde
     - JMP addr
 
+- Machine control
+    - HLT
+
 ## ALU operations
 
 - ADD

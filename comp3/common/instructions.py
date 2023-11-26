@@ -28,6 +28,9 @@ class OpCode(str, Enum):
     JB = 'JB'
     JBE = 'JBE'
     JMP = 'JMP'
+
+    # Machine control
+    HLT = 'HLT'
     
 class OperandType(str, Enum):
     IMMEDIATE = 'immediate'
@@ -47,20 +50,28 @@ class AluOp(Enum):
     DEC = 7 # Decrease right operand
 
 class Instruction(BaseModel):
+    instr_index: int = Field(default=0, ge=0)
     op_code: OpCode
     operand_type: OperandType
     operand: int = Field(ge=0, lt=2**32)
+    comment: str = Field(default='')
 
     # Should not be serialized in JSON
     # Used for stubbing
-    instr_id: Optional[int] = Field(exclude=True, default=None)
+    instr_id: Optional[int | str] = Field(exclude=True, default=None)
+
+class DataWord(BaseModel):
+    value: int = Field(ge=0, lt=2**32)
+    identifier: Optional[str] = Field(default=None)
 
 class DataStubInstruction(Instruction):
     data_stub_identifier: str
     
 class InstrStubInstruction(Instruction):
-    referenced_instr_id: int
+    referenced_instr_id: int | str
     referenced_instr_offset: int
 
 class Program(BaseModel):
+    start_addr: int
     instructions: list[Instruction]
+    data_memory: list[DataWord]

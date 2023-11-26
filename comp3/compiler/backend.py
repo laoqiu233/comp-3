@@ -1,5 +1,6 @@
-from comp3.compiler.ast import AstBackend, AstNode, GetCharNode, IntLiteralNode, LetNode, LetVarNode, LoadByIdentifierNode, LoopWhileNode, MathNode, PutCharNode, SetNode
-from comp3.common.instructions import OpCode, OperandType, Instruction, DataStubInstruction, InstrStubInstruction, Program
+from comp3.compiler.ast import AstBackend, AstNode, FuncCallNode, FuncNode, GetCharNode, IfNode, IntLiteralNode, LetNode, LetVarNode, LoadByIdentifierNode, LoopWhileNode, MathNode, PutCharNode, SetNode, StrAllocNode, StringLiteralNode
+from comp3.common.instructions import OpCode, OperandType, Instruction, DataStubInstruction, InstrStubInstruction, Program, DataWord
+from typing import Callable
 
 class Comp3Backend(AstBackend):
     stub_counter = 0
@@ -7,6 +8,8 @@ class Comp3Backend(AstBackend):
     def __init__(self, io_read_addr: int = 69, io_write_addr: int = 42):
         self.stack_identifiers: list[str] = []
         self.program: list[Instruction] = []
+        self.string_literals: set[str] = set()
+        self.string_buffers: dict[str, int] = {}
         self.io_read_addr = io_read_addr
         self.io_write_addr = io_write_addr
 
@@ -23,7 +26,8 @@ class Comp3Backend(AstBackend):
         self.program.append(Instruction(
             op_code=OpCode.PUSH,
             operand_type=OperandType.NO_OPERAND,
-            operand=0
+            operand=0,
+            comment=f'pushed variable "{node.identifier}" onto stack'
         ))
         self.stack_identifiers.append(node.identifier)
 
@@ -41,7 +45,8 @@ class Comp3Backend(AstBackend):
             self.program.append(Instruction(
                 op_code=OpCode.POP,
                 operand_type=OperandType.NO_OPERAND,
-                operand=0
+                operand=0,
+                comment=f'popped variable "{var.identifier}" out of stack'
             ))
 
     def visit_set_node(self, node: SetNode):
@@ -51,7 +56,8 @@ class Comp3Backend(AstBackend):
             self.program.append(Instruction(
                 op_code=OpCode.ST,
                 operand_type=OperandType.STACK_OFFSET,
-                operand=self.stack_identifiers[::-1].index(node.identifier)+1
+                operand=self.stack_identifiers[::-1].index(node.identifier)+1,
+                comment=f'update variable {node.identifier}'
             ))
         else:
             raise ValueError(f'Unkonwn identifier {node.identifier} found at line {node.start_token.line} col {node.start_token.pos}')
@@ -64,12 +70,20 @@ class Comp3Backend(AstBackend):
         node.loop_condition.compile(self)
         self.program[loop_condition_index].instr_id = start_id
 
+        self.program.append(Instruction(
+            op_code=OpCode.CMP,
+            operand_type=OperandType.IMMEDIATE,
+            operand=0,
+            comment='check if false'
+        ))
+
         self.program.append(InstrStubInstruction(
             op_code=OpCode.JZ,
             operand_type=OperandType.ADDRESS,
             operand=0,
             referenced_instr_id=end_id,
-            referenced_instr_offset=0
+            referenced_instr_offset=1,
+            comment='end while loop'
         ))
 
         for body_expr in node.body:
@@ -81,7 +95,8 @@ class Comp3Backend(AstBackend):
             operand=0,
             instr_id=end_id,
             referenced_instr_id=start_id,
-            referenced_instr_offset=0
+            referenced_instr_offset=0,
+            comment='jump to while loop condition check'
         ))
         
     def visit_math_node(self, node: MathNode):
@@ -109,7 +124,8 @@ class Comp3Backend(AstBackend):
         self.program.append(Instruction(
             op_code=OpCode.PUSH,
             operand_type=OperandType.NO_OPERAND,
-            operand=0
+            operand=0,
+            comment=f'push right operand of {node.op} to stack'
         )) # Now right operand is on top of the stack
         self.stack_identifiers.append('') # Anonymous identifier, probably won't be used by anyone, I hope.
         node.left_operand.compile(self) # Left operand in AC
@@ -118,19 +134,22 @@ class Comp3Backend(AstBackend):
             self.program.append(Instruction(
                 op_code=math_to_op_code[node.op],
                 operand_type=OperandType.STACK_OFFSET,
-                operand=1
+                operand=1,
+                comment=f'do {node.op} math operation'
             ))
         else:
             self.program.append(Instruction(
                 op_code=OpCode.CMP,
                 operand_type=OperandType.STACK_OFFSET,
-                operand=1
+                operand=1,
+                comment=f'do {node.op} comparison'
             ))
 
             self.program.append(Instruction(
                 op_code=OpCode.LD,
                 operand_type=OperandType.IMMEDIATE,
-                operand=1
+                operand=1,
+                comment='load true value'
             ))
 
             self.program.append(InstrStubInstruction(
@@ -138,13 +157,15 @@ class Comp3Backend(AstBackend):
                 operand_type=OperandType.ADDRESS,
                 operand=0,
                 referenced_instr_id=end_stub_id,
-                referenced_instr_offset=0
+                referenced_instr_offset=0,
+                comment=f'jump to return if {node.op} was success'
             ))
 
             self.program.append(Instruction(
                 op_code=OpCode.LD,
                 operand_type=OperandType.IMMEDIATE,
                 operand=0,
+                comment='load false value'
             ))
 
         # Remove right operand from stack
@@ -152,7 +173,8 @@ class Comp3Backend(AstBackend):
             op_code=OpCode.POP,
             operand_type=OperandType.NO_OPERAND,
             operand=0,
-            instr_id=end_stub_id
+            instr_id=end_stub_id,
+            comment=f'pop right operand of {node.op} from stack'
         ))
 
         if self.stack_identifiers.pop() != '':
@@ -162,7 +184,8 @@ class Comp3Backend(AstBackend):
         self.program.append(Instruction(
             op_code=OpCode.LD,
             operand_type=OperandType.ADDRESS,
-            operand=self.io_read_addr
+            operand=self.io_read_addr,
+            comment='io read'
         ))
 
     def visit_put_char_node(self, node: PutCharNode):
@@ -170,14 +193,16 @@ class Comp3Backend(AstBackend):
         self.program.append(Instruction(
             op_code=OpCode.ST,
             operand_type=OperandType.ADDRESS,
-            operand=self.io_write_addr
+            operand=self.io_write_addr,
+            comment='io write'
         ))
 
     def visit_int_literal_node(self, node: IntLiteralNode):
         self.program.append(Instruction(
             op_code=OpCode.LD,
             operand_type=OperandType.IMMEDIATE,
-            operand=node.value
+            operand=node.value,
+            comment=f'load literal {node.value}'
         ))
 
     def visit_load_by_identifier_node(self, node: LoadByIdentifierNode):
@@ -185,23 +210,263 @@ class Comp3Backend(AstBackend):
             self.program.append(Instruction(
                 op_code=OpCode.LD,
                 operand_type=OperandType.STACK_OFFSET,
-                operand=self.stack_identifiers[::-1].index(node.identifier)+1
+                operand=self.stack_identifiers[::-1].index(node.identifier)+1,
+                comment=f'load by identifier {node.identifier} from stack'
+            ))
+        else:
+            self.program.append(DataStubInstruction(
+                op_code=OpCode.LD,
+                operand_type=OperandType.IMMEDIATE,
+                operand=0,
+                data_stub_identifier=node.identifier,
+                comment=f'load by identifier {node.identifier} from memory'
             ))
 
+    def visit_func_node(self, node: FuncNode):
+        # Function declaration are always in global scope,
+        # it's okay to assume that stack_identifiers is empty
+        # and the stack is populated by the caller, consisting of
+        # the return address and the parameters passed
+
+        # Ret address should be on top of stack
+        self.stack_identifiers.append('')
+
+        for param_id in node.param_identifiers:
+            self.stack_identifiers.append(param_id)
+
+        func_start_index = len(self.program)
+
+        for body_expr in node.body:
+            body_expr.compile(self)
+        
+        self.program.append(Instruction(
+            op_code=OpCode.JMP,
+            operand_type=OperandType.STACK_OFFSET,
+            operand=len(self.stack_identifiers),
+            comment=f'return from function {node.identifier}'
+        ))
+
+        for param_id in node.param_identifiers[::-1]:
+            if self.stack_identifiers.pop() != param_id:
+                raise ValueError(f'DEBUG: Stack pop identifiers did not match, this should not happen')
+            
+        self.program[func_start_index].instr_id = node.identifier
+
+    def visit_func_call_node(self, node: FuncCallNode):
+        return_stub_id = Comp3Backend.get_stub_id()
+
+        self.program.append(InstrStubInstruction(
+            op_code=OpCode.LD,
+            operand_type=OperandType.IMMEDIATE,
+            operand=0,
+            referenced_instr_id=return_stub_id,
+            referenced_instr_offset=1,
+            comment=f'load next instruction address (return from {node.func_identifier})'
+        ))
+        self.program.append(Instruction(
+            op_code=OpCode.PUSH,
+            operand_type=OperandType.NO_OPERAND,
+            operand=0,
+            comment='push return address onto the stack'
+        ))
+        self.stack_identifiers.append(' ret_address') # Return address pushed onto the stack, should be anonymous
+
+        for index, param in enumerate(node.params):
+            param.compile(self)
+            self.program.append(Instruction(
+                op_code=OpCode.PUSH,
+                operand_type=OperandType.NO_OPERAND,
+                operand=0,
+                comment=f'push parameter {index} onto stack'
+            ))
+            self.stack_identifiers.append('') # Param is pushed onto the stack, should be anonymous
+            
+        self.program.append(InstrStubInstruction(
+            op_code=OpCode.JMP,
+            operand_type=OperandType.ADDRESS,
+            operand=0,
+            instr_id=return_stub_id,
+            referenced_instr_id=node.func_identifier,
+            referenced_instr_offset=0,
+            comment='function call'
+        ))
+
+        for index, param in reversed(list(enumerate(node.params))):
+            self.program.append(Instruction(
+                op_code=OpCode.POP,
+                operand_type=OperandType.NO_OPERAND,
+                operand=0,
+                comment=f'pop parameter {index} from stack'
+            ))
+            if self.stack_identifiers.pop() != '':
+                raise ValueError(f'DEBUG: Stack pop identifiers did not match, this should not happen')
+            
+        self.program.append(Instruction(
+            op_code=OpCode.POP,
+            operand_type=OperandType.NO_OPERAND,
+            operand=0,
+            comment='pop return address from stack'
+        ))
+        if self.stack_identifiers.pop() != ' ret_address':
+            raise ValueError(f'DEBUG: Stack pop identifiers did not match, this should not happen')
+    
+    def visit_string_literal_node(self, node: StringLiteralNode):
+        self.string_literals.add(node.value)
+        
+        self.program.append(DataStubInstruction(
+            op_code=OpCode.LD,
+            operand_type=OperandType.IMMEDIATE,
+            operand=0,
+            data_stub_identifier=node.value,
+            comment=f'load string literal {node.value} address'
+        ))
+
+    def visit_str_alloc_node(self, node: StrAllocNode):
+        if node.identifier in self.string_buffers:
+            raise ValueError(f'Invalid string buffer declaration at line {node.start_token.line} col {node.start_token.pos}, identifier {node.identifier} was already declared previously')
+        
+        self.string_buffers[node.identifier] = node.size
+
+    def visit_if_node(self, node: IfNode):
+        false_expr_stub_id = Comp3Backend.get_stub_id()
+        if_end_stub = Comp3Backend.get_stub_id()
+        node.if_condition.compile(self)
+        
+        self.program.append(Instruction(
+            op_code=OpCode.CMP,
+            operand_type=OperandType.IMMEDIATE,
+            operand=0,
+            comment='if compare'
+        ))
+        self.program.append(InstrStubInstruction(
+            op_code=OpCode.JZ,
+            operand_type=OperandType.ADDRESS,
+            operand=0,
+            referenced_instr_id=(if_end_stub if node.false_expr is None else false_expr_stub_id),
+            referenced_instr_offset=(1 if node.false_expr is None else 0),
+            comment='jump to end or false branch if false'
+        ))
+        node.true_expr.compile(self)
+        
+        if node.false_expr is not None:
+            self.program.append(InstrStubInstruction(
+                op_code=OpCode.JMP,
+                operand_type=OperandType.ADDRESS,
+                operand=0,
+                referenced_instr_id=if_end_stub,
+                referenced_instr_offset=1,
+                comment='true branch finished, jump to end'
+            ))
+
+            next_instr_index = len(self.program)
+            node.false_expr.compile(self)
+            self.program[next_instr_index].instr_id=false_expr_stub_id
+
+        self.program[-1].instr_id = if_end_stub
+
 def replace_stubs(program: Program):
-    instr_id_address: dict[int, int] = {}
+    instr_id_address: dict[int | str, int] = {}
+    data_id_address: dict[str, int] = {}
 
     for index, instr in enumerate(program.instructions):
         if instr.instr_id is not None:
             instr_id_address[instr.instr_id] = index
 
+    for index, data in enumerate(program.data_memory):
+        if data.identifier is not None:
+            data_id_address[data.identifier] = index
+
     for i in range(len(program.instructions)):
         instr = program.instructions[i]
         if isinstance(instr, InstrStubInstruction):
+            if instr.referenced_instr_id not in instr_id_address:
+                raise ValueError(f'Instruction stub identifier {instr.referenced_instr_id} in instruction {i} was not found in compiled program')
             referenced_addr = instr_id_address[instr.referenced_instr_id] + instr.referenced_instr_offset
             program.instructions[i] = Instruction(
                 op_code = program.instructions[i].op_code,
                 operand_type = program.instructions[i].operand_type,
-                operand = referenced_addr
+                operand = referenced_addr,
+                comment = program.instructions[i].comment
             )
-    
+        elif isinstance(instr, DataStubInstruction):
+            if instr.data_stub_identifier not in data_id_address:
+                raise ValueError(f'Data stub identifier {instr.data_stub_identifier} in instruction {i} was not found in compiled program')
+            program.instructions[i] = Instruction(
+                op_code = program.instructions[i].op_code,
+                operand_type = program.instructions[i].operand_type,
+                operand = data_id_address[instr.data_stub_identifier],
+                comment = program.instructions[i].comment
+            )
+
+def build_program_from_nodes(nodes: list[AstNode]) -> Program:
+    instructions: list[Instruction] = []
+    string_literals: set[str] = set()
+    string_buffers: dict[str, int] = {}
+
+    is_global: Callable[[AstNode], bool] = lambda x: isinstance(x, FuncNode) or isinstance(x, StrAllocNode)
+
+    def process_backend_results(backend: Comp3Backend):
+        nonlocal instructions, string_literals, string_buffers
+        instructions += backend.program
+        for literal in backend.string_literals:
+            string_literals.add(literal)
+        for identifier, size in backend.string_buffers.items():
+            if identifier in string_buffers:
+                raise ValueError(f'String buffer identifier {identifier} was declared more than one time')
+            string_buffers[identifier] = size
+
+    # Process all global declarations first
+    for node in filter(is_global, nodes):
+        backend = Comp3Backend()
+        backend.visit(node)
+        process_backend_results(backend)
+
+    program_start = len(instructions)
+
+    # Process everything else
+    for node in filter(lambda x: not is_global(x), nodes):
+        backend = Comp3Backend()
+        backend.visit(node)
+        process_backend_results(backend)
+
+    instructions.append(Instruction(
+        op_code=OpCode.HLT,
+        operand_type=OperandType.NO_OPERAND,
+        operand=0
+    ))
+
+    # Build data memory
+    data_memory: list[DataWord] = []
+
+    for literal in string_literals:
+        literal_addr = len(data_memory)
+        for char in literal:
+            data_memory.append(DataWord(
+                value=ord(char)
+            ))
+        # C-string end
+        data_memory.append(DataWord(
+            value=0
+        ))
+        data_memory[literal_addr].identifier = literal
+
+    for buffer_identifier, size in string_buffers.items():
+        buffer_addr = len(data_memory)
+        for _ in range(size):
+            data_memory.append(DataWord(
+                value=0
+            ))
+        data_memory[buffer_addr].identifier = buffer_identifier
+
+    program = Program(
+        start_addr=program_start,
+        instructions=instructions,
+        data_memory=data_memory
+    )
+
+    replace_stubs(program)
+
+    for index, instr in enumerate(program.instructions):
+        instr.instr_index = index
+
+    return program

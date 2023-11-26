@@ -44,6 +44,26 @@ class AstBackend(ABC):
     def visit_load_by_identifier_node(self, node: 'LoadByIdentifierNode'):
         pass
 
+    @abstractmethod
+    def visit_func_node(self, node: 'FuncNode'):
+        pass
+
+    @abstractmethod
+    def visit_func_call_node(self, node: 'FuncCallNode'):
+        pass
+
+    @abstractmethod
+    def visit_string_literal_node(self, node: 'StringLiteralNode'):
+        pass
+
+    @abstractmethod
+    def visit_str_alloc_node(self, node: 'StrAllocNode'):
+        pass
+
+    @abstractmethod
+    def visit_if_node(self, node: 'IfNode'):
+        pass
+
 class AstNode(ABC):
     @abstractmethod
     def compile(self, backend: AstBackend):
@@ -193,7 +213,7 @@ class FuncNode(AstNode):
         self.body = body
 
     def compile(self, backend: AstBackend):
-        pass
+        backend.visit_func_node(self)
 
     def __str__(self) -> str:
         s = f'function {self.identifier} ({", ".join(self.param_identifiers)}) ({self.start_token.line}-{self.start_token.pos} to {self.end_token.line}-{self.end_token.pos}) (\n'
@@ -214,7 +234,7 @@ class IfNode(AstNode):
         self.false_expr = false_expr
 
     def compile(self, backend: AstBackend):
-        pass
+        backend.visit_if_node(self)
 
     def __str__(self) -> str:
         s =  f'''(
@@ -237,7 +257,7 @@ class FuncCallNode(AstNode):
         self.params = params
 
     def compile(self, backend: AstBackend):
-        pass
+        backend.visit_func_call_node(self)
 
     def __str__(self) -> str:
         s = f'''(
@@ -260,7 +280,7 @@ class StrAllocNode(AstNode):
         self.size = size
 
     def compile(self, backend: AstBackend):
-        pass
+        backend.visit_str_alloc_node(self)
 
     def __str__(self) -> str:
         return f'(alloc_str {self.identifier} {self.size} chars)'
@@ -282,7 +302,7 @@ class StringLiteralNode(AstNode):
         self.value = value
 
     def compile(self, backend: AstBackend):
-        pass
+        backend.visit_string_literal_node(self)
 
     def __str__(self) -> str:
         return f'"{self.value}"'
