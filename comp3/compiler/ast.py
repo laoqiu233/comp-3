@@ -1,73 +1,77 @@
+from abc import ABC, abstractmethod
 from enum import Enum
-from comp3.compiler.lexer import TokenType, Token, Lexer
-from abc import abstractmethod, ABC
 from typing import Optional
+
+from comp3.compiler.lexer import Lexer, Token, TokenType
+
 
 class AstBackend(ABC):
     @abstractmethod
-    def visit(self, node: 'AstNode'):
+    def visit(self, node: "AstNode"):
         pass
 
     @abstractmethod
-    def visit_let_var_node(self, node: 'LetVarNode'):
+    def visit_let_var_node(self, node: "LetVarNode"):
         pass
 
     @abstractmethod
-    def visit_let_node(self, node: 'LetNode'):
+    def visit_let_node(self, node: "LetNode"):
         pass
 
     @abstractmethod
-    def visit_set_node(self, node: 'SetNode'):
+    def visit_set_node(self, node: "SetNode"):
         pass
 
     @abstractmethod
-    def visit_loop_while_node(self, node: 'LoopWhileNode'):
+    def visit_loop_while_node(self, node: "LoopWhileNode"):
         pass
 
     @abstractmethod
-    def visit_math_node(self, node: 'MathNode'):
+    def visit_math_node(self, node: "MathNode"):
         pass
 
     @abstractmethod
-    def visit_get_char_node(self, node: 'GetCharNode'):
+    def visit_get_char_node(self, node: "GetCharNode"):
         pass
 
     @abstractmethod
-    def visit_put_char_node(self, node: 'PutCharNode'):
+    def visit_put_char_node(self, node: "PutCharNode"):
         pass
 
     @abstractmethod
-    def visit_int_literal_node(self, node: 'IntLiteralNode'):
+    def visit_int_literal_node(self, node: "IntLiteralNode"):
         pass
 
     @abstractmethod
-    def visit_load_by_identifier_node(self, node: 'LoadByIdentifierNode'):
+    def visit_load_by_identifier_node(self, node: "LoadByIdentifierNode"):
         pass
 
     @abstractmethod
-    def visit_func_node(self, node: 'FuncNode'):
+    def visit_func_node(self, node: "FuncNode"):
         pass
 
     @abstractmethod
-    def visit_func_call_node(self, node: 'FuncCallNode'):
+    def visit_func_call_node(self, node: "FuncCallNode"):
         pass
 
     @abstractmethod
-    def visit_string_literal_node(self, node: 'StringLiteralNode'):
+    def visit_string_literal_node(self, node: "StringLiteralNode"):
         pass
 
     @abstractmethod
-    def visit_str_alloc_node(self, node: 'StrAllocNode'):
+    def visit_str_alloc_node(self, node: "StrAllocNode"):
         pass
 
     @abstractmethod
-    def visit_if_node(self, node: 'IfNode'):
+    def visit_if_node(self, node: "IfNode"):
         pass
+
 
 class AstNode(ABC):
     @abstractmethod
     def compile(self, backend: AstBackend):
         pass
+
 
 class LetVarNode(AstNode):
     def __init__(self, identifier: str, load_value: AstNode):
@@ -78,11 +82,17 @@ class LetVarNode(AstNode):
         backend.visit_let_var_node(self)
 
     def __str__(self) -> str:
-        return f'''{self.identifier} = {self.load_value}'''
-        
+        return f"""{self.identifier} = {self.load_value}"""
+
 
 class LetNode(AstNode):
-    def __init__(self, start_token: Token, end_token: Token, vars: list[LetVarNode], body: list[AstNode]):
+    def __init__(
+        self,
+        start_token: Token,
+        end_token: Token,
+        vars: list[LetVarNode],
+        body: list[AstNode],
+    ):
         self.start_token = start_token
         self.end_token = end_token
         self.vars = vars
@@ -95,20 +105,23 @@ class LetNode(AstNode):
         backend.visit_let_node(self)
 
     def __str__(self) -> str:
-        s = f'''(
+        s = f"""(
 \tlet ({self.start_token.line}-{self.start_token.pos} to {self.end_token.line}-{self.end_token.pos})
-\tvars:\n'''
+\tvars:\n"""
         for var in self.vars:
-            s += '\t\t' + '\t\t'.join(str(var).splitlines(True)) + '\n'
-        s += '\tbody:\n'
+            s += "\t\t" + "\t\t".join(str(var).splitlines(True)) + "\n"
+        s += "\tbody:\n"
         for expr in self.body:
-            s += '\t\t' + '\t\t'.join(str(expr).splitlines(True)) + '\n'
-        s += '\n)'
+            s += "\t\t" + "\t\t".join(str(expr).splitlines(True)) + "\n"
+        s += "\n)"
 
         return s
 
+
 class SetNode(AstNode):
-    def __init__(self, start_token: Token, end_token: Token, identifier: str, load_value: AstNode):
+    def __init__(
+        self, start_token: Token, end_token: Token, identifier: str, load_value: AstNode
+    ):
         self.start_token = start_token
         self.end_token = end_token
         self.identifier = identifier
@@ -118,14 +131,25 @@ class SetNode(AstNode):
         backend.visit_set_node(self)
 
     def __str__(self) -> str:
-        return f'''(
+        return (
+            f"""(
 \t({self.start_token.line}-{self.start_token.pos} to {self.end_token.line}-{self.end_token.pos})
 \tset
 \t{self.identifier}
-\tto\n\t''' + '\t'.join(str(self.load_value).splitlines(True)) + '\n)'
+\tto\n\t"""
+            + "\t".join(str(self.load_value).splitlines(True))
+            + "\n)"
+        )
+
 
 class LoopWhileNode(AstNode):
-    def __init__(self, start_token: Token, end_token: Token, loop_condition: AstNode, body: list[AstNode]):
+    def __init__(
+        self,
+        start_token: Token,
+        end_token: Token,
+        loop_condition: AstNode,
+        body: list[AstNode],
+    ):
         self.start_token = start_token
         self.end_token = end_token
         self.loop_condition = loop_condition
@@ -135,15 +159,18 @@ class LoopWhileNode(AstNode):
         backend.visit_loop_while_node(self)
 
     def __str__(self) -> str:
-        s = f'''(
+        s = f"""(
 \t({self.start_token.line}-{self.start_token.pos} to {self.end_token.line}-{self.end_token.pos})
-\tloop while\n'''
-        s += '\t\t' + '\t\t'.join(str(self.loop_condition).splitlines(True)) + '\n\tdo\n'
+\tloop while\n"""
+        s += (
+            "\t\t" + "\t\t".join(str(self.loop_condition).splitlines(True)) + "\n\tdo\n"
+        )
 
         for expr in self.body:
-            s += '\t\t' + '\t\t'.join(str(expr).splitlines(True)) + '\n'
-        s += ')'
+            s += "\t\t" + "\t\t".join(str(expr).splitlines(True)) + "\n"
+        s += ")"
         return s
+
 
 class GetCharNode(AstNode):
     def __init__(self, start_token: Token, end_token: Token):
@@ -154,7 +181,8 @@ class GetCharNode(AstNode):
         backend.visit_get_char_node(self)
 
     def __str__(self) -> str:
-        return f'get_char ({self.start_token.line}-{self.start_token.pos} to {self.end_token.line}-{self.end_token.pos})'
+        return f"get_char ({self.start_token.line}-{self.start_token.pos} to {self.end_token.line}-{self.end_token.pos})"
+
 
 class PutCharNode(AstNode):
     def __init__(self, start_token: Token, end_token: Token, load_value: AstNode):
@@ -166,24 +194,36 @@ class PutCharNode(AstNode):
         backend.visit_put_char_node(self)
 
     def __str__(self) -> str:
-        return f'''(
+        return (
+            f"""(
 \t({self.start_token.line}-{self.start_token.pos} to {self.end_token.line}-{self.end_token.pos})
-\tput_char\n\t''' + '\t'.join(str(self.load_value).splitlines(True)) + '\n)'
+\tput_char\n\t"""
+            + "\t".join(str(self.load_value).splitlines(True))
+            + "\n)"
+        )
+
 
 class MathNode(AstNode):
     class MathOp(str, Enum):
-        ADD = '+'
-        SUB = '-'
-        AND = '&'
-        OR  = '|'
-        LT  = '<'
-        LE  = '<='
-        GT  = '>'
-        GE  = '>='
-        EQ  = '='
-        NE  = '!='
+        ADD = "+"
+        SUB = "-"
+        AND = "&"
+        OR = "|"
+        LT = "<"
+        LE = "<="
+        GT = ">"
+        GE = ">="
+        EQ = "="
+        NE = "!="
 
-    def __init__(self, start_token: Token, end_token: Token, left_operand: AstNode, right_operand: AstNode, op: MathOp):
+    def __init__(
+        self,
+        start_token: Token,
+        end_token: Token,
+        left_operand: AstNode,
+        right_operand: AstNode,
+        op: MathOp,
+    ):
         self.start_token = start_token
         self.end_token = end_token
         self.left_operand = left_operand
@@ -194,18 +234,26 @@ class MathNode(AstNode):
         backend.visit_math_node(self)
 
     def __str__(self) -> str:
-        s = f'''(
+        s = f"""(
 \t({self.start_token.line}-{self.start_token.pos} to {self.end_token.line}-{self.end_token.pos})
-\t'''
-        s += '\t'.join(str(self.left_operand).splitlines(True))
-        s += f'\n\t{self.op.value}\n\t'
-        s += '\t'.join(str(self.right_operand).splitlines(True))
-        s += '\n)'
+\t"""
+        s += "\t".join(str(self.left_operand).splitlines(True))
+        s += f"\n\t{self.op.value}\n\t"
+        s += "\t".join(str(self.right_operand).splitlines(True))
+        s += "\n)"
 
         return s
-    
+
+
 class FuncNode(AstNode):
-    def __init__(self, start_token: Token, end_token: Token, identifier: str, param_identifiers: list[str], body: list[AstNode]):
+    def __init__(
+        self,
+        start_token: Token,
+        end_token: Token,
+        identifier: str,
+        param_identifiers: list[str],
+        body: list[AstNode],
+    ):
         self.start_token = start_token
         self.end_token = end_token
         self.identifier = identifier
@@ -219,14 +267,22 @@ class FuncNode(AstNode):
         s = f'function {self.identifier} ({", ".join(self.param_identifiers)}) ({self.start_token.line}-{self.start_token.pos} to {self.end_token.line}-{self.end_token.pos}) (\n'
 
         for expr in self.body:
-            s += '\t' + '\t'.join(str(expr).splitlines(True)) + '\n'
+            s += "\t" + "\t".join(str(expr).splitlines(True)) + "\n"
 
-        s += ')'
+        s += ")"
 
         return s
 
+
 class IfNode(AstNode):
-    def __init__(self, start_token: Token, end_token: Token, if_condition: AstNode, true_expr: AstNode, false_expr: Optional[AstNode]):
+    def __init__(
+        self,
+        start_token: Token,
+        end_token: Token,
+        if_condition: AstNode,
+        true_expr: AstNode,
+        false_expr: Optional[AstNode],
+    ):
         self.start_token = start_token
         self.end_token = end_token
         self.if_condition = if_condition
@@ -237,20 +293,27 @@ class IfNode(AstNode):
         backend.visit_if_node(self)
 
     def __str__(self) -> str:
-        s =  f'''(
+        s = f"""(
 \t({self.start_token.line}-{self.start_token.pos} to {self.end_token.line}-{self.end_token.pos})
-\tif\n\t\t'''
-        s += '\t\t'.join(str(self.if_condition).splitlines(True))
-        s += '\n\tthen\n\t\t'
-        s += '\t\t'.join(str(self.true_expr).splitlines(True))
+\tif\n\t\t"""
+        s += "\t\t".join(str(self.if_condition).splitlines(True))
+        s += "\n\tthen\n\t\t"
+        s += "\t\t".join(str(self.true_expr).splitlines(True))
         if self.false_expr is not None:
-            s += '\n\telse\n\t\t'
-            s += '\t\t'.join(str(self.false_expr).splitlines(True))
-        s += '\n)'
+            s += "\n\telse\n\t\t"
+            s += "\t\t".join(str(self.false_expr).splitlines(True))
+        s += "\n)"
         return s
 
+
 class FuncCallNode(AstNode):
-    def __init__(self, start_token: Token, end_token: Token, func_identifier: str, params: list[AstNode]):
+    def __init__(
+        self,
+        start_token: Token,
+        end_token: Token,
+        func_identifier: str,
+        params: list[AstNode],
+    ):
         self.start_token = start_token
         self.end_token = end_token
         self.func_identifier = func_identifier
@@ -260,20 +323,23 @@ class FuncCallNode(AstNode):
         backend.visit_func_call_node(self)
 
     def __str__(self) -> str:
-        s = f'''(
+        s = f"""(
 \t({self.start_token.line}-{self.start_token.pos} to {self.end_token.line}-{self.end_token.pos})
 \tcall {self.func_identifier}
 \t(\n
-'''
+"""
         for param in self.params:
-            s += '\t\t' + '\t\t'.join(str(param).splitlines(True)) + '\n'
-        
-        s += '\t)\n)'
+            s += "\t\t" + "\t\t".join(str(param).splitlines(True)) + "\n"
+
+        s += "\t)\n)"
 
         return s
-    
+
+
 class StrAllocNode(AstNode):
-    def __init__(self, start_token: Token, end_token: Token, identifier: str, size: int):
+    def __init__(
+        self, start_token: Token, end_token: Token, identifier: str, size: int
+    ):
         self.start_token = start_token
         self.end_token = end_token
         self.identifier = identifier
@@ -283,7 +349,8 @@ class StrAllocNode(AstNode):
         backend.visit_str_alloc_node(self)
 
     def __str__(self) -> str:
-        return f'(alloc_str {self.identifier} {self.size} chars)'
+        return f"(alloc_str {self.identifier} {self.size} chars)"
+
 
 class IntLiteralNode(AstNode):
     def __init__(self, token: Token, value: int):
@@ -296,6 +363,7 @@ class IntLiteralNode(AstNode):
     def __str__(self) -> str:
         return str(self.value)
 
+
 class StringLiteralNode(AstNode):
     def __init__(self, token: Token, value: str):
         self.token = token
@@ -307,6 +375,7 @@ class StringLiteralNode(AstNode):
     def __str__(self) -> str:
         return f'"{self.value}"'
 
+
 class LoadByIdentifierNode(AstNode):
     def __init__(self, token: Token, identifier: str):
         self.token = token
@@ -316,13 +385,20 @@ class LoadByIdentifierNode(AstNode):
         backend.visit_load_by_identifier_node(self)
 
     def __str__(self) -> str:
-        return f'({self.identifier})'
+        return f"({self.identifier})"
+
 
 def unexpected_eof(token: Token) -> ValueError:
-    return ValueError(f'Unexpected EOF reached at line {token.line} col {token.pos + len(token.value)}')
+    return ValueError(
+        f"Unexpected EOF reached at line {token.line} col {token.pos + len(token.value)}"
+    )
+
 
 def unexpected_token(token: Token, expected: str) -> ValueError:
-    return ValueError(f'Unexpected token {token.value} at line {token.line} col {token.pos}, expected {expected}')
+    return ValueError(
+        f"Unexpected token {token.value} at line {token.line} col {token.pos}, expected {expected}"
+    )
+
 
 class AstBuilder:
     def __init__(self, tokens: list[Token]):
@@ -347,27 +423,33 @@ class AstBuilder:
         token = self._get_next_token()
 
         if token.token_type != TokenType.LEFT_PARENTHESIS:
-            raise unexpected_token(token, '(')
-        
-        while (token := self._get_next_token()).token_type != TokenType.RIGHT_PARENTHESIS:
+            raise unexpected_token(token, "(")
+
+        while (
+            token := self._get_next_token()
+        ).token_type != TokenType.RIGHT_PARENTHESIS:
             if token.token_type != TokenType.LEFT_PARENTHESIS:
-                raise unexpected_token(token, '( for new variable or ) for closing let block')
+                raise unexpected_token(
+                    token, "( for new variable or ) for closing let block"
+                )
             identifier_token = self._get_next_token()
             if identifier_token.token_type != TokenType.IDENTIFIER:
-                raise unexpected_token(token, 'an identifier for the variable')
+                raise unexpected_token(token, "an identifier for the variable")
             load_value = self.parse_node()
-            
-            if (closing_token := self._get_next_token()).token_type != TokenType.RIGHT_PARENTHESIS:
-                raise unexpected_token(closing_token, ')')
-            
+
+            if (
+                closing_token := self._get_next_token()
+            ).token_type != TokenType.RIGHT_PARENTHESIS:
+                raise unexpected_token(closing_token, ")")
+
             let_vars.append(LetVarNode(identifier_token.value, load_value))
 
         return let_vars
-    
+
     def _try_get_end_token(self) -> Token:
         end_token = self._get_next_token()
         if end_token.token_type != TokenType.RIGHT_PARENTHESIS:
-            raise unexpected_token(end_token, ')')
+            raise unexpected_token(end_token, ")")
         return end_token
 
     def parse_node(self, is_global: bool = False) -> AstNode:
@@ -376,7 +458,7 @@ class AstBuilder:
         if token.token_type == TokenType.LEFT_PARENTHESIS:
             start_token = token
             if (token := self._get_next_token()).token_type == TokenType.IDENTIFIER:
-                if token.value == 'let':
+                if token.value == "let":
                     # (let ((varname expr) (varname expr) ...)
                     #   body_expr
                     #   body_expr
@@ -384,115 +466,178 @@ class AstBuilder:
                     # )
                     let_vars = self._parse_let_vars()
                     let_body: list[AstNode] = []
-                    while self._peek_next_token().token_type != TokenType.RIGHT_PARENTHESIS:
+                    while (
+                        self._peek_next_token().token_type
+                        != TokenType.RIGHT_PARENTHESIS
+                    ):
                         let_body.append(self.parse_node())
-                    end_token = self._get_next_token() # Consume the closing parenthesis
+                    end_token = (
+                        self._get_next_token()
+                    )  # Consume the closing parenthesis
                     return LetNode(start_token, end_token, let_vars, let_body)
-                elif token.value == 'set':
+                elif token.value == "set":
                     # (set identifier expr)
                     identifier = self._get_next_token()
                     if identifier.token_type != TokenType.IDENTIFIER:
-                        raise unexpected_token(identifier, 'an identifier')
+                        raise unexpected_token(identifier, "an identifier")
                     load_value = self.parse_node()
-                    return SetNode(start_token, self._try_get_end_token(), identifier.value, load_value)
-                elif token.value == 'get_char':
+                    return SetNode(
+                        start_token,
+                        self._try_get_end_token(),
+                        identifier.value,
+                        load_value,
+                    )
+                elif token.value == "get_char":
                     # (get_char)
                     return GetCharNode(start_token, self._try_get_end_token())
-                elif token.value == 'put_char':
+                elif token.value == "put_char":
                     # (put_char expr)
                     load_value = self.parse_node()
-                    return PutCharNode(start_token, self._try_get_end_token(), load_value)
-                elif token.value == 'loop':
+                    return PutCharNode(
+                        start_token, self._try_get_end_token(), load_value
+                    )
+                elif token.value == "loop":
                     loop_op = self._get_next_token()
                     if loop_op.token_type != TokenType.IDENTIFIER:
-                        raise unexpected_token(loop_op, 'while or for')
-                    if loop_op.value == 'while':
-                        # (loop while expr do 
+                        raise unexpected_token(loop_op, "while or for")
+                    if loop_op.value == "while":
+                        # (loop while expr do
                         #   body_expr
                         #   body_expr
                         #   ...
                         # )
                         loop_condition = self.parse_node()
                         do_token = self._get_next_token()
-                        if do_token.token_type != TokenType.IDENTIFIER or do_token.value != 'do':
-                            raise unexpected_token(do_token, 'do')
+                        if (
+                            do_token.token_type != TokenType.IDENTIFIER
+                            or do_token.value != "do"
+                        ):
+                            raise unexpected_token(do_token, "do")
                         body: list[AstNode] = []
-                        while self._peek_next_token().token_type != TokenType.RIGHT_PARENTHESIS:
+                        while (
+                            self._peek_next_token().token_type
+                            != TokenType.RIGHT_PARENTHESIS
+                        ):
                             body.append(self.parse_node())
                         end_token = self._get_next_token()
-                        return LoopWhileNode(start_token, end_token, loop_condition, body)
+                        return LoopWhileNode(
+                            start_token, end_token, loop_condition, body
+                        )
                 elif token.value in MathNode.MathOp.__members__.values():
                     # (mathop left_operand right_operand)
                     math_op = MathNode.MathOp(token.value)
                     left_operand = self.parse_node()
                     right_opreand = self.parse_node()
-                    return MathNode(start_token, self._try_get_end_token(), left_operand, right_opreand, math_op)
-                elif token.value == 'defun':
-                    # (defun identifier (param_identifier_1 param_identifier_2 ...) 
+                    return MathNode(
+                        start_token,
+                        self._try_get_end_token(),
+                        left_operand,
+                        right_opreand,
+                        math_op,
+                    )
+                elif token.value == "defun":
+                    # (defun identifier (param_identifier_1 param_identifier_2 ...)
                     #   body_expr
                     #   body_expr
                     #   ...
                     # )
-                    
+
                     # Only allow function definition in global scope
                     if not is_global:
-                        raise ValueError(f'Unexpected function definition at line {token.line} col {token.pos}, function definition is only allowed in the global scope')
-                    
+                        raise ValueError(
+                            f"Unexpected function definition at line {token.line} col {token.pos}, function definition is only allowed in the global scope"
+                        )
+
                     func_id_token = self._get_next_token()
                     if func_id_token.token_type != TokenType.IDENTIFIER:
-                        raise unexpected_token(func_id_token, 'a function identifier')
-                    
+                        raise unexpected_token(func_id_token, "a function identifier")
+
                     params_start = self._get_next_token()
                     if params_start.token_type != TokenType.LEFT_PARENTHESIS:
-                        raise unexpected_token(params_start, '(')
-                    
+                        raise unexpected_token(params_start, "(")
+
                     param_ids: list[str] = []
 
-                    while self._peek_next_token().token_type != TokenType.RIGHT_PARENTHESIS:
+                    while (
+                        self._peek_next_token().token_type
+                        != TokenType.RIGHT_PARENTHESIS
+                    ):
                         param_token = self._get_next_token()
                         if param_token.token_type != TokenType.IDENTIFIER:
-                            raise unexpected_token(param_token, 'a parameter identifier')
+                            raise unexpected_token(
+                                param_token, "a parameter identifier"
+                            )
                         param_ids.append(param_token.value)
 
-                    self._get_next_token() # Consume param closing parenthesis
-                    
+                    self._get_next_token()  # Consume param closing parenthesis
+
                     body: list[AstNode] = []
 
-                    while self._peek_next_token().token_type != TokenType.RIGHT_PARENTHESIS:
+                    while (
+                        self._peek_next_token().token_type
+                        != TokenType.RIGHT_PARENTHESIS
+                    ):
                         body.append(self.parse_node())
-                    
-                    return FuncNode(start_token, self._try_get_end_token(), func_id_token.value, param_ids, body)
-                elif token.value == 'if':
+
+                    return FuncNode(
+                        start_token,
+                        self._try_get_end_token(),
+                        func_id_token.value,
+                        param_ids,
+                        body,
+                    )
+                elif token.value == "if":
                     # (if expr true_expr [false_expr])
                     condition = self.parse_node()
                     true_expr = self.parse_node()
                     false_expr = None
-                    if self._peek_next_token().token_type != TokenType.RIGHT_PARENTHESIS:
+                    if (
+                        self._peek_next_token().token_type
+                        != TokenType.RIGHT_PARENTHESIS
+                    ):
                         false_expr = self.parse_node()
-                    return IfNode(start_token, self._try_get_end_token(), condition, true_expr, false_expr)
-                elif token.value == 'alloc_str':
+                    return IfNode(
+                        start_token,
+                        self._try_get_end_token(),
+                        condition,
+                        true_expr,
+                        false_expr,
+                    )
+                elif token.value == "alloc_str":
                     # Only allow string buffer allocation in global scope
                     if not is_global:
-                        raise ValueError(f'Unexpected string allocation at line {token.line} col {token.pos}, string allocation is only allowed in the global scope')
+                        raise ValueError(
+                            f"Unexpected string allocation at line {token.line} col {token.pos}, string allocation is only allowed in the global scope"
+                        )
 
                     str_id = self._get_next_token()
                     if str_id.token_type != TokenType.IDENTIFIER:
-                        raise unexpected_token(str_id, 'an identifier')
+                        raise unexpected_token(str_id, "an identifier")
                     size = self._get_next_token()
                     if size.token_type != TokenType.INT_LITERAL:
-                        raise unexpected_token(size, 'an integer')
-                    return StrAllocNode(start_token, self._try_get_end_token(), str_id.value, int(size.value))
+                        raise unexpected_token(size, "an integer")
+                    return StrAllocNode(
+                        start_token,
+                        self._try_get_end_token(),
+                        str_id.value,
+                        int(size.value),
+                    )
                 else:
                     # (func_identifier [params])
                     params: list[AstNode] = []
 
-                    while self._peek_next_token().token_type != TokenType.RIGHT_PARENTHESIS:
+                    while (
+                        self._peek_next_token().token_type
+                        != TokenType.RIGHT_PARENTHESIS
+                    ):
                         params.append(self.parse_node())
 
-                    return FuncCallNode(start_token, self._get_next_token(), token.value, params)
+                    return FuncCallNode(
+                        start_token, self._get_next_token(), token.value, params
+                    )
 
         elif token.token_type == TokenType.BOOL_LITERAL:
-            if token.value == 'false':
+            if token.value == "false":
                 return IntLiteralNode(token, 0)
             else:
                 return IntLiteralNode(token, 1)
@@ -503,7 +648,8 @@ class AstBuilder:
         elif token.token_type == TokenType.IDENTIFIER:
             return LoadByIdentifierNode(token, token.value)
 
-        raise unexpected_token(token, 'dmitrik to write better code')   
+        raise unexpected_token(token, "dmitrik to write better code")
+
 
 def build_nodes_from_tokens(tokens: list[Token]):
     builder = AstBuilder(tokens)
@@ -512,10 +658,11 @@ def build_nodes_from_tokens(tokens: list[Token]):
     while not builder.is_eof():
         nodes.append(builder.parse_node(True))
 
-    return nodes       
+    return nodes
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     with open("examples/hello_user_name.lisq") as file:
         lexer = Lexer(file)
         tokens = lexer.lex()
-        print(*build_nodes_from_tokens(tokens), sep='\n\n')
+        print(*build_nodes_from_tokens(tokens), sep="\n\n")
