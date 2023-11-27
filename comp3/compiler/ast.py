@@ -374,7 +374,7 @@ class AstBuilder:
             raise unexpected_eof(self.tokens[-1])
         return self.tokens[self.i]
 
-    def _parse_let_vars(self) -> list[LetVarNode]:
+    def parse_let_vars(self) -> list[LetVarNode]:
         let_vars: list[LetVarNode] = []
         token = self._get_next_token()
 
@@ -511,7 +511,7 @@ class AstBuilder:
         #   body_expr
         #   ...
         # )
-        let_vars = self._parse_let_vars()
+        let_vars = self.parse_let_vars()
         let_body: list[AstNode] = []
         while self._peek_next_token().token_type != TokenType.RIGHT_PARENTHESIS:
             let_body.append(self.parse_node())
