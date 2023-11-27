@@ -52,6 +52,7 @@ class AluOp(Enum):
     SHR = 5
     INC = 6  # Increase left operand
     DEC = 7  # Decrease right operand
+    NOT = 8
 
 
 class Instruction(BaseModel):
