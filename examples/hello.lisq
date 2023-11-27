@@ -1,3 +1,5 @@
+(defun print_string (s))
+
 (let ((str "hello world!"))
     (print_string str)
 )

@@ -64,7 +64,7 @@ class Instruction(BaseModel):
 
     # Should not be serialized in JSON
     # Used for stubbing
-    instr_id: Optional[int | str] = Field(exclude=True, default=None)
+    instr_id: list[int | str] = Field(exclude=True, default_factory=lambda: [])
 
 
 class DataWord(BaseModel):

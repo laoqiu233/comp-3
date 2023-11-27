@@ -104,7 +104,7 @@ class Comp3Backend(AstBackend):
 
         loop_condition_index = len(self.program)
         node.loop_condition.compile(self)
-        self.program[loop_condition_index].instr_id = start_id
+        self.program[loop_condition_index].instr_id.append(start_id)
 
         self.program.append(
             Instruction(
@@ -134,7 +134,7 @@ class Comp3Backend(AstBackend):
                 op_code=OpCode.JMP,
                 operand_type=OperandType.ADDRESS,
                 operand=0,
-                instr_id=end_id,
+                instr_id=[end_id],
                 referenced_instr_id=start_id,
                 referenced_instr_offset=0,
                 comment="jump to while loop condition check",
@@ -230,7 +230,7 @@ class Comp3Backend(AstBackend):
                 op_code=OpCode.POP,
                 operand_type=OperandType.NO_OPERAND,
                 operand=0,
-                instr_id=end_stub_id,
+                instr_id=[end_stub_id],
                 comment=f"pop right operand of {node.op} from stack",
             )
         )
@@ -322,7 +322,7 @@ class Comp3Backend(AstBackend):
                     "DEBUG: Stack pop identifiers did not match, this should not happen"
                 )
 
-        self.program[func_start_index].instr_id = node.identifier
+        self.program[func_start_index].instr_id.append(node.identifier)
 
     def visit_func_call_node(self, node: FuncCallNode):
         return_stub_id = Comp3Backend.get_stub_id()
@@ -366,7 +366,7 @@ class Comp3Backend(AstBackend):
                 op_code=OpCode.JMP,
                 operand_type=OperandType.ADDRESS,
                 operand=0,
-                instr_id=return_stub_id,
+                instr_id=[return_stub_id],
                 referenced_instr_id=node.func_identifier,
                 referenced_instr_offset=0,
                 comment="function call",
@@ -462,9 +462,9 @@ class Comp3Backend(AstBackend):
 
             next_instr_index = len(self.program)
             node.false_expr.compile(self)
-            self.program[next_instr_index].instr_id = false_expr_stub_id
+            self.program[next_instr_index].instr_id.append(false_expr_stub_id)
 
-        self.program[-1].instr_id = if_end_stub
+        self.program[-1].instr_id.append(if_end_stub)
 
 
 def replace_stubs(program: Program):
@@ -472,8 +472,8 @@ def replace_stubs(program: Program):
     data_id_address: dict[str, int] = {}
 
     for index, instr in enumerate(program.instructions):
-        if instr.instr_id is not None:
-            instr_id_address[instr.instr_id] = index
+        for instr_id in instr.instr_id:
+            instr_id_address[instr_id] = index
 
     for index, data in enumerate(program.data_memory):
         if data.identifier is not None:
