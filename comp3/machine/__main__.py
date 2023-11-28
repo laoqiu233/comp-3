@@ -7,7 +7,7 @@ from comp3.machine.microcode import runtime
 
 
 if __name__ == "__main__":
-    with open("output/examples/euler_problem.json", encoding="utf-8") as file:
+    with open("output/examples/euler_problem_1.json", encoding="utf-8") as file:
         data = json.load(file)
         program = Program(**data)
         input_stream = list(input("Program IO input: "))
