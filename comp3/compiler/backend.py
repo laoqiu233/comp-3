@@ -27,6 +27,7 @@ from comp3.compiler.ast import (
     SetPtrNode,
     StrAllocNode,
     StringLiteralNode,
+    MultipleExpressionNode
 )
 
 
@@ -48,6 +49,10 @@ class Comp3Backend(AstBackend):
 
     def visit(self, node: AstNode):
         node.compile(self)
+
+    def visit_multiple_expressions_node(self, node: MultipleExpressionNode):
+        for expr in node.expressions:
+            expr.compile(self)
 
     def visit_let_var_node(self, node: LetVarNode):
         node.load_value.compile(self)
@@ -178,6 +183,8 @@ class Comp3Backend(AstBackend):
             MathNode.MathOp.SUB: OpCode.SUB,
             MathNode.MathOp.AND: OpCode.AND,
             MathNode.MathOp.OR: OpCode.OR,
+            MathNode.MathOp.SHL: OpCode.SHL,
+            MathNode.MathOp.SHR: OpCode.SHR
         }
         branch_to_op_code = {
             MathNode.MathOp.EQ: OpCode.JZ,

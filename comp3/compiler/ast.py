@@ -75,6 +75,10 @@ class AstBackend(ABC):
     def visit_if_node(self, node: "IfNode"):
         pass
 
+    @abstractmethod
+    def visit_multiple_expressions_node(self, node: "MultipleExpressionNode"):
+        pass
+
 
 # pylint: disable=too-few-public-methods
 class AstNode(ABC):
@@ -216,6 +220,8 @@ class MathNode(AstNode):
         GE = ">="
         EQ = "="
         NE = "!="
+        SHL = "<<"
+        SHR = ">>"
 
     start_token: Token
     end_token: Token
@@ -371,6 +377,15 @@ class LoadByPointerIdentifierNode(AstNode):
 
     def compile(self, backend: AstBackend):
         backend.visit_load_by_pointer_identifier_node(self)
+
+@dataclass
+class MultipleExpressionNode(AstNode):
+    start_token: Token
+    end_token: Token
+    expressions: list[AstNode]
+
+    def compile(self, backend: AstBackend):
+        backend.visit_multiple_expressions_node(self)
 
 
 def unexpected_eof(token: Token) -> ValueError:
@@ -627,14 +642,22 @@ class AstBuilder:
             node = FuncCallNode(start_token, self._get_next_token(), token.value, params)
 
         return node
+    
+    def parse_multiple_expressions_node(self, start_token: Token) -> AstNode:
+        nodes: list[AstNode] = []
+        while self._peek_next_token().token_type != TokenType.RIGHT_PARENTHESIS:
+            nodes.append(self.parse_node())
+        return MultipleExpressionNode(start_token, self._get_next_token(), nodes)
 
     def parse_node(self, is_global: bool = False) -> AstNode:
         token = self._get_next_token()
 
         if token.token_type == TokenType.LEFT_PARENTHESIS:
             start_token = token
-            if (token := self._get_next_token()).token_type == TokenType.IDENTIFIER:
-                return self.parse_keywords(start_token, token, is_global)
+            if self._peek_next_token().token_type == TokenType.IDENTIFIER:
+                return self.parse_keywords(start_token, self._get_next_token(), is_global)
+            if self._peek_next_token().token_type == TokenType.LEFT_PARENTHESIS:
+                return self.parse_multiple_expressions_node(start_token)
         elif token.token_type == TokenType.BOOL_LITERAL:
             return IntLiteralNode(token, 1 if token.value == "true" else 0)
         elif token.token_type == TokenType.INT_LITERAL:

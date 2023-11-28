@@ -1,17 +1,22 @@
 #include lisq_lib/math.lisq
 #include lisq_lib/strings.lisq
 
-(let ((a 0) (result false) (b 0))
-    (loop while (= result false) do 
-        (set a (+ a 1))
-        (set result true)
-        (set b 1)
-        (loop while (<= b 20) do 
-            (if (!= (remainder a b) 0)
+(defun check (x)
+    (let ((result true) (i 20))
+        (loop while (& result (>= i 10)) do
+            (if (!= (remainder x i) 0)
                 (set result false)
             )
-            (set b (+ b 1))
+            (set i (- i 1))
         )
+        result
     )
-    (print_int a)
+)
+
+(let ((i 0) (result false))
+    (loop while (!= result true) do
+        (set i (+ i 2520))
+        (set result (check i))
+    )
+    (print_int i)
 )

@@ -1,16 +1,45 @@
-(defun remainder (dividend divisor) 
-  (loop while (>= dividend divisor) do
-    (set dividend (- dividend divisor))
-  )
-  dividend
+(defun bits (val)
+    (let ((res 0))
+        (loop while (> val 0) do
+            (set val (>> val 1))
+            (set res (+ res 1))
+        )
+        res
+    )
 )
 
-(defun divide (dividend divisor)
-    (let ((ans 0))
-        (loop while (>= dividend divisor) do 
-            (set ans (+ ans 1))
-            (set dividend (- dividend divisor))
+(defun divide (n d)
+    (let ( (r 0) (q 0) (i (- (bits n) 1)) )
+        (loop while (>= i 0) do
+            (set q (<< q 1))
+            (set r (<< r 1))
+            (set r (+ r (& (>> n i) 1)))
+            (if (>= r d)
+                (
+                    (set r (- r d))
+                    (set q (+ q 1))
+                )
+            )
+            (set i (- i 1))
         )
-        ans
+        q
     )
-) 
+)
+
+(defun remainder (n d)
+    (let ( (r 0) (q 0) (i (- (bits n) 1)) )
+        (loop while (>= i 0) do
+            (set q (<< q 1))
+            (set r (<< r 1))
+            (set r (+ r (& (>> n i) 1)))
+            (if (>= r d)
+                (
+                    (set r (- r d))
+                    (set q (+ q 1))
+                )
+            )
+            (set i (- i 1))
+        )
+        r
+    )
+)
