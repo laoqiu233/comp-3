@@ -150,7 +150,7 @@ class ALU(ValueStore):
             res = left << right
             if res >= (1 << 32):
                 self.c_flag = True
-            res %= (1 << 32)
+            res %= 1 << 32
             if ALU.is_neg(res):
                 self.n_flag = True
             if res == 0:

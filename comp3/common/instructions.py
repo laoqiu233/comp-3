@@ -40,6 +40,7 @@ class OperandType(str, Enum):
     ADDRESS = "address"
     POINTER_ADDRESS = "pointer_address"
     STACK_OFFSET = "stack_offset"
+    POINTER_STACK_OFFSET = "pointer_stack_offset"
     NO_OPERAND = "no_operand"
 
 

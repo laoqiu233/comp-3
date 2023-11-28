@@ -1,9 +1,5 @@
-(defun remainder (devidend divisor) 
-  (loop while (>= devidend divisor) do
-    (set devidend (- devidend divisor))
-  )
-  devidend
-)
+#include lisq_lib/math.lisq
+#include lisq_lib/strings.lisq
 
 (let ((a 0) (result false) (b 0))
     (loop while (= result false) do 
@@ -17,5 +13,5 @@
             (set b (+ b 1))
         )
     )
-    (put_char a)
+    (print_int a)
 )

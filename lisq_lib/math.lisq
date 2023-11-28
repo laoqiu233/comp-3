@@ -1,0 +1,16 @@
+(defun remainder (dividend divisor) 
+  (loop while (>= dividend divisor) do
+    (set dividend (- dividend divisor))
+  )
+  dividend
+)
+
+(defun divide (dividend divisor)
+    (let ((ans 0))
+        (loop while (>= dividend divisor) do 
+            (set ans (+ ans 1))
+            (set dividend (- dividend divisor))
+        )
+        ans
+    )
+) 

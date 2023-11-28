@@ -24,6 +24,10 @@ class AstBackend(ABC):
         pass
 
     @abstractmethod
+    def visit_set_ptr_node(self, node: "SetPtrNode"):
+        pass
+
+    @abstractmethod
     def visit_loop_while_node(self, node: "LoopWhileNode"):
         pass
 
@@ -45,6 +49,10 @@ class AstBackend(ABC):
 
     @abstractmethod
     def visit_load_by_identifier_node(self, node: "LoadByIdentifierNode"):
+        pass
+
+    @abstractmethod
+    def visit_load_by_pointer_identifier_node(self, node: "LoadByPointerIdentifierNode"):
         pass
 
     @abstractmethod
@@ -130,6 +138,17 @@ class SetNode(AstNode):
 \tset
 \t{self.identifier}
 \tto\n\t""" + "\t".join(str(self.load_value).splitlines(True)) + "\n)"
+
+
+@dataclass
+class SetPtrNode(AstNode):
+    start_token: Token
+    end_token: Token
+    identifier: str
+    load_value: AstNode
+
+    def compile(self, backend: AstBackend):
+        backend.visit_set_ptr_node(self)
 
 
 @dataclass
@@ -344,6 +363,16 @@ class LoadByIdentifierNode(AstNode):
         return f"({self.identifier})"
 
 
+@dataclass
+class LoadByPointerIdentifierNode(AstNode):
+    start_token: Token
+    end_token: Token
+    identifier: str
+
+    def compile(self, backend: AstBackend):
+        backend.visit_load_by_pointer_identifier_node(self)
+
+
 def unexpected_eof(token: Token) -> ValueError:
     return ValueError(
         f"Unexpected EOF reached at line {token.line} col {token.pos + len(token.value)}"
@@ -429,6 +458,19 @@ class AstBuilder:
             raise unexpected_token(identifier, "an identifier")
         load_value = self.parse_node()
         return SetNode(
+            start_token,
+            self._try_get_end_token(),
+            identifier.value,
+            load_value,
+        )
+
+    def parse_set_ptr_node(self, start_token: Token) -> AstNode:
+        # (set_ptr identifier expr)
+        identifier = self._get_next_token()
+        if identifier.token_type != TokenType.IDENTIFIER:
+            raise unexpected_token(identifier, "an identifier")
+        load_value = self.parse_node()
+        return SetPtrNode(
             start_token,
             self._try_get_end_token(),
             identifier.value,
@@ -525,6 +567,8 @@ class AstBuilder:
             node = self.parse_let_node(start_token)
         elif token.value == "set":
             node = self.parse_set_node(start_token)
+        elif token.value == "set_ptr":
+            node = self.parse_set_ptr_node(start_token)
         elif token.value == "get_char":
             # (get_char)
             node = GetCharNode(start_token, self._try_get_end_token())
@@ -564,6 +608,14 @@ class AstBuilder:
             )
         elif token.value == "alloc_str":
             node = self.parse_alloc_str_node(start_token, token, is_global)
+        elif token.value == "@":
+            # (@ identifier)
+            if self._peek_next_token().token_type != TokenType.IDENTIFIER:
+                raise unexpected_token(self._peek_next_token(), "an identifier")
+            identifier = self._get_next_token()
+            node = LoadByPointerIdentifierNode(
+                start_token, self._try_get_end_token(), identifier.value
+            )
         else:
             # Everything else is assumed to be a function call
             # (func_identifier [params])

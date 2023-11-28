@@ -19,10 +19,12 @@ from comp3.compiler.ast import (
     LetNode,
     LetVarNode,
     LoadByIdentifierNode,
+    LoadByPointerIdentifierNode,
     LoopWhileNode,
     MathNode,
     PutCharNode,
     SetNode,
+    SetPtrNode,
     StrAllocNode,
     StringLiteralNode,
 )
@@ -94,9 +96,37 @@ class Comp3Backend(AstBackend):
                 )
             )
         else:
-            raise ValueError(
-                f"Unkonwn identifier {node.identifier} found at line {node.start_token.line} col"
-                f" {node.start_token.pos}"
+            self.program.append(
+                DataStubInstruction(
+                    op_code=OpCode.ST,
+                    operand_type=OperandType.ADDRESS,
+                    operand=0,
+                    comment=f"update global variable {node.identifier}",
+                    data_stub_identifier=node.identifier,
+                )
+            )
+
+    def visit_set_ptr_node(self, node: SetPtrNode):
+        node.load_value.compile(self)
+
+        if node.identifier in self.stack_identifiers:
+            self.program.append(
+                Instruction(
+                    op_code=OpCode.ST,
+                    operand_type=OperandType.POINTER_STACK_OFFSET,
+                    operand=self.stack_identifiers[::-1].index(node.identifier),
+                    comment=f"update by pointer {node.identifier}",
+                )
+            )
+        else:
+            self.program.append(
+                DataStubInstruction(
+                    op_code=OpCode.ST,
+                    operand_type=OperandType.POINTER_ADDRESS,
+                    operand=0,
+                    comment=f"update by global pointer {node.identifier}",
+                    data_stub_identifier=node.identifier,
+                )
             )
 
     def visit_loop_while_node(self, node: LoopWhileNode):
@@ -291,6 +321,27 @@ class Comp3Backend(AstBackend):
                 )
             )
 
+    def visit_load_by_pointer_identifier_node(self, node: LoadByPointerIdentifierNode):
+        if node.identifier in self.stack_identifiers:
+            self.program.append(
+                Instruction(
+                    op_code=OpCode.LD,
+                    operand_type=OperandType.POINTER_STACK_OFFSET,
+                    operand=self.stack_identifiers[::-1].index(node.identifier),
+                    comment=f"load by pointer {node.identifier}",
+                )
+            )
+        else:
+            self.program.append(
+                DataStubInstruction(
+                    op_code=OpCode.LD,
+                    operand_type=OperandType.ADDRESS,
+                    operand=0,
+                    data_stub_identifier=node.identifier,
+                    comment=f"load by global pointer {node.identifier}",
+                )
+            )
+
     def visit_func_node(self, node: FuncNode):
         # Function declaration are always in global scope,
         # it's okay to assume that stack_identifiers is empty
@@ -311,7 +362,7 @@ class Comp3Backend(AstBackend):
         self.program.append(
             Instruction(
                 op_code=OpCode.JMP,
-                operand_type=OperandType.STACK_OFFSET,
+                operand_type=OperandType.POINTER_STACK_OFFSET,
                 operand=len(self.stack_identifiers) - 1,
                 comment=f"return from function {node.identifier}",
             )

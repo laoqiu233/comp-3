@@ -1,5 +1,4 @@
-(defun print_string (s))
+#include lisq_lib/math.lisq
+#include lisq_lib/strings.lisq
 
-(let ((str "hello world!"))
-    (print_string str)
-)
+(print_string "hello world")

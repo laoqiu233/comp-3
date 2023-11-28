@@ -1,0 +1,43 @@
+(defun get_string_char (s i)
+    (let ((addr (+ s i)))
+        (@ addr)
+    )
+)
+
+(defun set_string_char (s i val)
+    (let ((addr (+ s i)))
+        (set_ptr addr val)
+    )
+)
+
+(defun print_string (s)
+    (let ((char 0) (i 0))
+        (set char (get_string_char s i))
+        (loop while (!= char 0) do
+            (put_char char)
+            (set i (+ i 1))
+            (set char (get_string_char s i))
+        )
+    )
+)
+
+(alloc_str print_int_buffer 100)
+
+(defun print_int(val)
+    (let ((i 1))
+        (let ((rem (remainder val 10)))
+            (set_string_char print_int_buffer 0 (+ rem 48))
+            (set val (divide val 10))
+        )
+        (loop while (> val 0) do
+            (let ( (rem (remainder val 10)) )
+                (set_string_char print_int_buffer i (+ rem 48))
+                (set val (divide val 10))
+                (set i (+ i 1))
+            )
+        )
+        (loop while (> i 0) do
+            (put_char (get_string_char print_int_buffer  (set i (- i 1))))
+        )
+    )
+)

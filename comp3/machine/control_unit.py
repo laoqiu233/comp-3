@@ -30,4 +30,4 @@ class ControlUnit:
     def run(self):
         while not self.datapath.ps.hlt:
             self.execute_microcode()
-            #input("...")
+            # input("...")

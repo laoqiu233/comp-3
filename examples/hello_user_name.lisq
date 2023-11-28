@@ -1,15 +1,16 @@
-(alloc_str username 100)
+#include lisq_lib/math.lisq
+#include lisq_lib/strings.lisq
 
-(defun set_str (a b c))
-(defun print_str (a))
+(alloc_str username 100)
 
 (let ((i 0) (char 0))
     (set char (get_char))
     (loop while (& (< i 100) (!= char 0)) do
-        (set_str username i char)
+        (set_string_char username i char)
         (set i (+ i 1))
+        (set char (get_char))
     )
-    (print_str "hello, ")
-    (print_str username)
-    (print_str "!")
+    (print_string "hello, ")
+    (print_string username)
+    (print_string "!")
 )
