@@ -28,3 +28,7 @@ class DataIoMuxSel(Enum):
 class DrMuxSel(Enum):
     SEL_ALU = 0
     SEL_DATA = 1
+
+
+IO_READ_ADDRESS = 42
+IO_WRITE_ADDRESS = 69

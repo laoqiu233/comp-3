@@ -25,8 +25,9 @@ class ControlUnit:
                 self.mpc = microcode.branch_target
 
         print(self.datapath)
+        self.total_ticks += 1
 
     def run(self):
-        while True:
+        while not self.datapath.ps.hlt:
             self.execute_microcode()
-            input("...")
+            #input("...")

@@ -7,10 +7,13 @@ from comp3.machine.microcode import runtime
 
 
 if __name__ == "__main__":
-    with open("output.json", encoding="utf-8") as file:
+    with open("output/examples/cat.json", encoding="utf-8") as file:
         data = json.load(file)
         program = Program(**data)
         input_stream = list(input("Program IO input: "))
         dp = DataPath(program, input_stream)
         cpu = ControlUnit(dp, runtime)
         cpu.run()
+
+        print(f"Program finished executing, ticks taken: {cpu.total_ticks}")
+        print("IO output: ", "".join(map(chr, cpu.datapath.io_interface.output_buffer)))

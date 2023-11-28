@@ -7,6 +7,7 @@ from comp3.machine.components import (
     InstructionRegister,
     IoIntercae,
     Mux,
+    ProgramStatus,
     Register,
     ZeroReg,
 )
@@ -25,6 +26,7 @@ class DataPath:
         self.ac = Register(self.alu)
         self.ar = Register(self.alu)
         self.sp = Register(self.alu)
+        self.sp.val = 4096  # Initialized to point to 1 above 4kb
         self.pc = Register(self.alu)
         self.pc.val = program.start_addr
 
@@ -44,10 +46,13 @@ class DataPath:
         self.alu_left_operand_mux.input_regs = (self.ac, self.br, self.ir, self.zero_reg)
         self.alu_right_operand_mux.input_regs = (self.dr, self.ar, self.sp, self.zero_reg)
 
+        self.ps = ProgramStatus(self.alu)
+
     def __str__(self) -> str:
         return (
             f"AC: {self.ac.val} | AR: {self.ar.val} | SP: {self.sp.val} | PC: {self.pc.val} | IR:"
-            f" {self.ir.value.model_dump_json()} | DR: {self.dr.val} | BR: {self.br.val}"
+            f" {self.ir.value.model_dump_json()} | DR: {self.dr.val} | BR: {self.br.val} | N:"
+            f" {self.ps.n} | Z: {self.ps.z} | C: {self.ps.c}"
         )
 
     # Signals
@@ -77,6 +82,15 @@ class DataPath:
 
     def write_data(self):
         self.data_memory.latch()
+
+    def latch_ps(self):
+        self.ps.latch()
+
+    def clear_ps(self):
+        self.ps.clear()
+
+    def latch_hlt(self):
+        self.ps.latch_hlt()
 
     # Mux selections
     def sel_br_mux(self, sel: BrMuxSel):

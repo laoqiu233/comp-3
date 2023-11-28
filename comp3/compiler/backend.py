@@ -1,3 +1,4 @@
+from comp3.common.config import IO_READ_ADDRESS, IO_WRITE_ADDRESS
 from comp3.common.instructions import (
     DataStubInstruction,
     DataWord,
@@ -30,7 +31,7 @@ from comp3.compiler.ast import (
 class Comp3Backend(AstBackend):
     stub_counter = 0
 
-    def __init__(self, io_read_addr: int = 69, io_write_addr: int = 42):
+    def __init__(self, io_read_addr: int = IO_READ_ADDRESS, io_write_addr: int = IO_WRITE_ADDRESS):
         self.stack_identifiers: list[str] = []
         self.program: list[Instruction] = []
         self.string_literals: set[str] = set()
@@ -88,7 +89,7 @@ class Comp3Backend(AstBackend):
                 Instruction(
                     op_code=OpCode.ST,
                     operand_type=OperandType.STACK_OFFSET,
-                    operand=self.stack_identifiers[::-1].index(node.identifier) + 1,
+                    operand=self.stack_identifiers[::-1].index(node.identifier),
                     comment=f"update variable {node.identifier}",
                 )
             )
@@ -181,7 +182,7 @@ class Comp3Backend(AstBackend):
                 Instruction(
                     op_code=math_to_op_code[node.op],
                     operand_type=OperandType.STACK_OFFSET,
-                    operand=1,
+                    operand=0,
                     comment=f"do {node.op} math operation",
                 )
             )
@@ -190,7 +191,7 @@ class Comp3Backend(AstBackend):
                 Instruction(
                     op_code=OpCode.CMP,
                     operand_type=OperandType.STACK_OFFSET,
-                    operand=1,
+                    operand=0,
                     comment=f"do {node.op} comparison",
                 )
             )
@@ -275,7 +276,7 @@ class Comp3Backend(AstBackend):
                 Instruction(
                     op_code=OpCode.LD,
                     operand_type=OperandType.STACK_OFFSET,
-                    operand=self.stack_identifiers[::-1].index(node.identifier) + 1,
+                    operand=self.stack_identifiers[::-1].index(node.identifier),
                     comment=f"load by identifier {node.identifier} from stack",
                 )
             )
@@ -311,7 +312,7 @@ class Comp3Backend(AstBackend):
             Instruction(
                 op_code=OpCode.JMP,
                 operand_type=OperandType.STACK_OFFSET,
-                operand=len(self.stack_identifiers),
+                operand=len(self.stack_identifiers) - 1,
                 comment=f"return from function {node.identifier}",
             )
         )

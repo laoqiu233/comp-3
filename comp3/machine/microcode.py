@@ -1,6 +1,7 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Optional
 
+from comp3.common.config import IO_READ_ADDRESS, IO_WRITE_ADDRESS
 from comp3.common.instructions import AluOp, OpCode, OperandType
 from comp3.machine.common import AluLopSel, AluRopSel, BrMuxSel, DataIoMuxSel, DrMuxSel
 from comp3.machine.datapath import DataPath
@@ -18,22 +19,24 @@ class MicroCode:
     cycle for this microcode.
     """
 
-    alu_lop_sel: AluLopSel
-    alu_rop_sel: AluRopSel
-    data_io_mux_sel: DataIoMuxSel
-    br_mux_sel: BrMuxSel
-    dr_mux_sel: DrMuxSel
-    alu_op: AluOp
+    alu_lop_sel: AluLopSel = AluLopSel.SEL_ZERO
+    alu_rop_sel: AluRopSel = AluRopSel.SEL_ZERO
+    data_io_mux_sel: DataIoMuxSel = DataIoMuxSel.SEL_DATA
+    br_mux_sel: BrMuxSel = BrMuxSel.SEL_ALU
+    dr_mux_sel: DrMuxSel = DrMuxSel.SEL_DATA
+    alu_op: AluOp = AluOp.ADD
 
-    latch_ac: bool
-    latch_br: bool
-    latch_ir: bool
-    latch_dr: bool
-    latch_ar: bool
-    latch_sp: bool
-    latch_pc: bool
-    latch_io: bool
-    latch_data: bool
+    latch_ac: bool = False
+    latch_br: bool = False
+    latch_ir: bool = False
+    latch_dr: bool = False
+    latch_ar: bool = False
+    latch_sp: bool = False
+    latch_pc: bool = False
+    latch_io: bool = False
+    latch_data: bool = False
+    latch_ps: bool = False
+    latch_hlt: bool = False
 
     alias: Optional[str] = None
 
@@ -63,6 +66,24 @@ class MicroCode:
             data_path.write_io()
         if self.latch_data:
             data_path.write_data()
+        if self.latch_ps:
+            data_path.latch_ps()
+        if self.latch_hlt:
+            data_path.latch_hlt()
+
+    def _format_dr(self) -> str:
+        if self.dr_mux_sel == DrMuxSel.SEL_ALU:
+            return f"DR <- {self.alu_lop_sel} {self.alu_op} {self.alu_rop_sel} "
+        if self.dr_mux_sel == DrMuxSel.SEL_DATA:
+            return f"DR <- {self.data_io_mux_sel} "
+        return ""
+
+    def _format_br(self) -> str:
+        if self.br_mux_sel == BrMuxSel.SEL_ALU:
+            return f"BR <- {self.alu_lop_sel} {self.alu_op} {self.alu_rop_sel} "
+        if self.br_mux_sel == BrMuxSel.SEL_PC:
+            return "BR <- PC "
+        return ""
 
     def __str__(self) -> str:
         s = ""
@@ -71,16 +92,13 @@ class MicroCode:
             s += f"AC <- {self.alu_lop_sel} {self.alu_op} {self.alu_rop_sel} "
 
         if self.latch_br:
-            s += f"AC <- {self.br_mux_sel} "
+            s += self._format_br()
 
         if self.latch_ir:
             s += "IR <- INSTR_MEMORY "
 
         if self.latch_dr:
-            if self.dr_mux_sel == DrMuxSel.SEL_ALU:
-                s += f"DR <- {self.alu_lop_sel} {self.alu_op} {self.alu_rop_sel} "
-            elif self.dr_mux_sel == DrMuxSel.SEL_DATA:
-                s += f"DR <- {self.data_io_mux_sel} "
+            s += self._format_dr()
 
         if self.latch_ar:
             s += f"AR <- {self.alu_lop_sel} {self.alu_op} {self.alu_rop_sel} "
@@ -88,14 +106,23 @@ class MicroCode:
         if self.latch_sp:
             s += f"SP <- {self.alu_lop_sel} {self.alu_op} {self.alu_rop_sel} "
 
+        if self.latch_pc:
+            s += f"PC <- {self.alu_lop_sel} {self.alu_op} {self.alu_rop_sel} "
+
+        if self.latch_ps:
+            s += f"PS <- NZC({self.alu_lop_sel} {self.alu_op} {self.alu_rop_sel}) "
+
         if self.latch_io:
             s += f"IO <- {self.alu_lop_sel} {self.alu_op} {self.alu_rop_sel} "
 
         if self.latch_data:
             s += f"DATA <- {self.alu_lop_sel} {self.alu_op} {self.alu_rop_sel} "
 
+        if self.latch_hlt:
+            s += "HLT "
+
         if self.alias is not None:
-            s += f" ({self.alias})"
+            s += f"({self.alias})"
 
         return s
 
@@ -113,46 +140,58 @@ class BranchingMicroCode:
 
     branch_target: int | str  # Micro code address or alias
 
-    check_op_code: list[OpCode]
-    check_operand: Optional[OperandType]
-    check_c_flag: Optional[bool]
-    check_n_flag: Optional[bool]
-    check_z_flag: Optional[bool]
+    check_op_code: list[OpCode] = field(default_factory=list)
+    check_operand_type: Optional[OperandType] = None
+    check_operand: Optional[int] = None
+    check_c_flag: Optional[bool] = None
+    check_n_flag: Optional[bool] = None
+    check_z_flag: Optional[bool] = None
 
     alias: Optional[str] = None
 
     def execute(self, datapath: DataPath) -> bool:
+        res = True
+
         if (
             len(self.check_op_code) != 0
             and datapath.ir.get_instruction().op_code not in self.check_op_code
         ):
-            return False
+            res = False
+
+        if (
+            self.check_operand_type is not None
+            and datapath.ir.get_instruction().operand_type != self.check_operand_type
+        ):
+            res = False
 
         if (
             self.check_operand is not None
-            and datapath.ir.get_instruction().operand_type != self.check_operand
+            and datapath.ir.get_instruction().operand != self.check_operand
         ):
-            return False
+            res = False
 
-        if self.check_c_flag is not None and datapath.alu.c_flag != self.check_c_flag:
-            return False
+        if self.check_c_flag is not None and datapath.ps.c != self.check_c_flag:
+            res = False
 
-        if self.check_n_flag is not None and datapath.alu.n_flag != self.check_n_flag:
-            return False
+        if self.check_n_flag is not None and datapath.ps.n != self.check_n_flag:
+            res = False
 
-        if self.check_z_flag is not None and datapath.alu.z_flag != self.check_z_flag:
-            return False
+        if self.check_z_flag is not None and datapath.ps.z != self.check_z_flag:
+            res = False
 
-        return True
+        return res
 
     def __str__(self) -> str:
         s = f"JUMP TO {self.branch_target} IF "
 
         if len(self.check_op_code) != 0:
-            s += f"OP_CODE IN {self.check_op_code} "
+            s += f"OP_CODE IN {list(map(lambda x: x.value, self.check_op_code))} "
+
+        if self.check_operand_type is not None:
+            s += f"OPERNAD_TYPE = {self.check_operand_type} "
 
         if self.check_operand is not None:
-            s += f"OPERNAD = {self.check_operand} "
+            s += f"OPERAND = {self.check_operand} "
 
         if self.check_c_flag is not None:
             s += f"C = {self.check_c_flag} "
@@ -170,256 +209,171 @@ class BranchingMicroCode:
 
 
 runtime: list[MicroCode | BranchingMicroCode] = [
+    MicroCode(latch_ir=True, alias="start"),
+    MicroCode(br_mux_sel=BrMuxSel.SEL_PC, latch_br=True),
+    MicroCode(alu_lop_sel=AluLopSel.SEL_BR, alu_op=AluOp.INC, latch_pc=True),
+    BranchingMicroCode("push", check_op_code=[OpCode.PUSH]),
+    BranchingMicroCode("pop", check_op_code=[OpCode.POP]),
+    BranchingMicroCode("hlt", check_op_code=[OpCode.HLT]),
+    BranchingMicroCode("fetch_pointer_address", check_operand_type=OperandType.POINTER_ADDRESS),
+    BranchingMicroCode("fetch_stack_offset", check_operand_type=OperandType.STACK_OFFSET),
     MicroCode(
-        AluLopSel.SEL_ZERO,
-        AluRopSel.SEL_ZERO,
-        DataIoMuxSel.SEL_DATA,
-        BrMuxSel.SEL_ALU,
-        DrMuxSel.SEL_DATA,
-        AluOp.ADD,
-        latch_ac=False,
-        latch_br=False,
-        latch_ir=True,
-        latch_dr=False,
-        latch_ar=False,
-        latch_sp=False,
-        latch_pc=False,
-        latch_io=False,
-        latch_data=False,
-        alias='fetch_instruction'
+        alu_lop_sel=AluLopSel.SEL_IR,
+        dr_mux_sel=DrMuxSel.SEL_ALU,
+        latch_dr=True,
+        alias="fetch_immediate_or_no_operand_or_address",
     ),
-    BranchingMicroCode(
-        branch_target="fetch_immediate",
-        check_op_code=[],
-        check_operand=OperandType.IMMEDIATE,
-        check_c_flag=None,
-        check_n_flag=None,
-        check_z_flag=None,
-    ),
-    BranchingMicroCode(
-        branch_target="fetch_address",
-        check_op_code=[],
-        check_operand=OperandType.ADDRESS,
-        check_c_flag=None,
-        check_n_flag=None,
-        check_z_flag=None,
-    ),
-    BranchingMicroCode(
-        branch_target="fetch_pointer_address",
-        check_op_code=[],
-        check_operand=OperandType.POINTER_ADDRESS,
-        check_c_flag=None,
-        check_n_flag=None,
-        check_z_flag=None,
-    ),
+    BranchingMicroCode("fetch_operand", check_operand_type=OperandType.ADDRESS),
+    BranchingMicroCode("execute"),
+    MicroCode(alu_lop_sel=AluLopSel.SEL_IR, latch_ar=True, alias="fetch_pointer_address"),
+    MicroCode(latch_dr=True),
+    BranchingMicroCode("fetch_operand"),
     MicroCode(
-        AluLopSel.SEL_ZERO,
-        AluRopSel.SEL_SP,
-        DataIoMuxSel.SEL_DATA,
-        BrMuxSel.SEL_ALU,
-        DrMuxSel.SEL_ALU,
-        AluOp.ADD,
-        latch_ac=False,
+        alu_lop_sel=AluLopSel.SEL_IR,
+        alu_rop_sel=AluRopSel.SEL_SP,
+        alu_op=AluOp.ADD,
+        dr_mux_sel=DrMuxSel.SEL_ALU,
+        latch_dr=True,
+        alias="fetch_stack_offset",
+    ),
+    MicroCode(alu_rop_sel=AluRopSel.SEL_DR, latch_ar=True, alias="fetch_operand"),
+    BranchingMicroCode(
+        "pre_jump",
+        check_op_code=[
+            OpCode.JZ,
+            OpCode.JNZ,
+            OpCode.JB,
+            OpCode.JBE,
+            OpCode.JA,
+            OpCode.JAE,
+            OpCode.JMP,
+        ],
+        alias="execute",
+    ),
+    BranchingMicroCode("st", check_op_code=[OpCode.ST]),
+    BranchingMicroCode("execute2", check_operand_type=OperandType.IMMEDIATE),
+    BranchingMicroCode("execute2", check_operand_type=OperandType.NO_OPERAND),
+    BranchingMicroCode(
+        "fetch_from_io", check_operand=IO_READ_ADDRESS, check_operand_type=OperandType.ADDRESS
+    ),
+    MicroCode(latch_dr=True),
+    BranchingMicroCode("execute2"),
+    MicroCode(data_io_mux_sel=DataIoMuxSel.SEL_IO, latch_dr=True, alias="fetch_from_io"),
+    BranchingMicroCode("add", check_op_code=[OpCode.ADD], alias="execute2"),
+    BranchingMicroCode("sub", check_op_code=[OpCode.SUB]),
+    BranchingMicroCode("and", check_op_code=[OpCode.AND]),
+    BranchingMicroCode("or", check_op_code=[OpCode.OR]),
+    BranchingMicroCode("shl", check_op_code=[OpCode.SHL]),
+    BranchingMicroCode("shr", check_op_code=[OpCode.SHR]),
+    BranchingMicroCode("cmp", check_op_code=[OpCode.CMP]),
+    MicroCode(alu_rop_sel=AluRopSel.SEL_DR, latch_ac=True, alias="ld"),
+    BranchingMicroCode("end"),
+    BranchingMicroCode(
+        "st_to_io",
+        check_operand=IO_WRITE_ADDRESS,
+        check_operand_type=OperandType.ADDRESS,
+        alias="st",
+    ),
+    MicroCode(alu_lop_sel=AluLopSel.SEL_AC, latch_data=True),
+    BranchingMicroCode("end"),
+    MicroCode(alu_lop_sel=AluLopSel.SEL_AC, latch_io=True, alias="st_to_io"),
+    BranchingMicroCode("end"),
+    MicroCode(
+        alu_lop_sel=AluLopSel.SEL_AC,
+        alu_rop_sel=AluRopSel.SEL_DR,
+        alu_op=AluOp.ADD,
         latch_br=True,
-        latch_ir=False,
-        latch_dr=False,
-        latch_ar=False,
-        latch_sp=False,
-        latch_pc=False,
-        latch_io=False,
-        latch_data=False,
-        alias='fetch_stack_offset'
+        latch_ps=True,
+        alias="add",
     ),
+    BranchingMicroCode("math_end"),
     MicroCode(
-        AluLopSel.SEL_IR,
-        AluRopSel.SEL_ZERO,
-        DataIoMuxSel.SEL_DATA,
-        BrMuxSel.SEL_ALU,
-        DrMuxSel.SEL_ALU,
-        AluOp.ADD,
-        latch_ac=False,
-        latch_br=False,
-        latch_ir=False,
-        latch_dr=True,
-        latch_ar=False,
-        latch_sp=False,
-        latch_pc=False,
-        latch_io=False,
-        latch_data=False
+        alu_lop_sel=AluLopSel.SEL_AC,
+        alu_rop_sel=AluRopSel.SEL_DR,
+        alu_op=AluOp.SUB,
+        latch_br=True,
+        latch_ps=True,
+        alias="sub",
     ),
+    BranchingMicroCode("math_end"),
     MicroCode(
-        AluLopSel.SEL_BR,
-        AluRopSel.SEL_DR,
-        DataIoMuxSel.SEL_DATA,
-        BrMuxSel.SEL_ALU,
-        DrMuxSel.SEL_ALU,
-        AluOp.SUB,
-        latch_ac=False,
-        latch_br=False,
-        latch_ir=False,
-        latch_dr=False,
-        latch_ar=True,
-        latch_sp=False,
-        latch_pc=False,
-        latch_io=False,
-        latch_data=False
+        alu_lop_sel=AluLopSel.SEL_AC,
+        alu_rop_sel=AluRopSel.SEL_DR,
+        alu_op=AluOp.AND,
+        latch_br=True,
+        latch_ps=True,
+        alias="and",
     ),
+    BranchingMicroCode("math_end"),
+    MicroCode(
+        alu_lop_sel=AluLopSel.SEL_AC,
+        alu_rop_sel=AluRopSel.SEL_DR,
+        alu_op=AluOp.OR,
+        latch_br=True,
+        latch_ps=True,
+        alias="or",
+    ),
+    BranchingMicroCode("math_end"),
+    MicroCode(
+        alu_lop_sel=AluLopSel.SEL_AC,
+        alu_rop_sel=AluRopSel.SEL_DR,
+        alu_op=AluOp.SHL,
+        latch_br=True,
+        latch_ps=True,
+        alias="shl",
+    ),
+    BranchingMicroCode("math_end"),
+    MicroCode(
+        alu_lop_sel=AluLopSel.SEL_AC,
+        alu_rop_sel=AluRopSel.SEL_DR,
+        alu_op=AluOp.SHR,
+        latch_br=True,
+        latch_ps=True,
+        alias="shr",
+    ),
+    MicroCode(alu_lop_sel=AluLopSel.SEL_BR, latch_ac=True, alias="math_end"),
+    BranchingMicroCode("end"),
+    MicroCode(alu_rop_sel=AluRopSel.SEL_SP, alu_op=AluOp.DEC, latch_br=True, alias="push"),
+    MicroCode(alu_lop_sel=AluLopSel.SEL_BR, latch_sp=True, latch_ar=True),
+    MicroCode(alu_lop_sel=AluLopSel.SEL_AC, latch_data=True),
+    BranchingMicroCode("end"),
+    MicroCode(alu_rop_sel=AluRopSel.SEL_SP, latch_br=True, alias="pop"),
+    MicroCode(alu_lop_sel=AluLopSel.SEL_BR, alu_op=AluOp.INC, latch_sp=True),
+    BranchingMicroCode("end"),
+    MicroCode(latch_hlt=True, alias="hlt"),
+    BranchingMicroCode("end"),
+    MicroCode(
+        alu_lop_sel=AluLopSel.SEL_AC,
+        alu_rop_sel=AluRopSel.SEL_DR,
+        alu_op=AluOp.SUB,
+        latch_ps=True,
+        alias="cmp",
+    ),
+    BranchingMicroCode("end"),
     BranchingMicroCode(
-        branch_target="check_load_operand",
-        check_op_code=[],
-        check_operand=None,
-        check_c_flag=None,
-        check_n_flag=None,
-        check_z_flag=None,
+        "get_address_from_stack", check_operand_type=OperandType.STACK_OFFSET, alias="pre_jump"
     ),
-    MicroCode(
-        AluLopSel.SEL_IR,
-        AluRopSel.SEL_ZERO,
-        DataIoMuxSel.SEL_DATA,
-        BrMuxSel.SEL_ALU,
-        DrMuxSel.SEL_ALU,
-        AluOp.ADD,
-        latch_ac=False,
-        latch_br=False,
-        latch_ir=False,
-        latch_dr=True,
-        latch_ar=False,
-        latch_sp=False,
-        latch_pc=False,
-        latch_io=False,
-        latch_data=False,
-        alias="fetch_immediate",
-    ),
-    BranchingMicroCode(
-        branch_target="check_load_operand",
-        check_op_code=[],
-        check_operand=None,
-        check_c_flag=None,
-        check_n_flag=None,
-        check_z_flag=None,
-    ),
-    MicroCode(
-        AluLopSel.SEL_IR,
-        AluRopSel.SEL_ZERO,
-        DataIoMuxSel.SEL_DATA,
-        BrMuxSel.SEL_ALU,
-        DrMuxSel.SEL_ALU,
-        AluOp.ADD,
-        latch_ac=False,
-        latch_br=False,
-        latch_ir=False,
-        latch_dr=False,
-        latch_ar=True,
-        latch_sp=False,
-        latch_pc=False,
-        latch_io=False,
-        latch_data=False,
-        alias="fetch_address",
-    ),
-    BranchingMicroCode(
-        branch_target="check_load_operand",
-        check_op_code=[],
-        check_operand=None,
-        check_c_flag=None,
-        check_n_flag=None,
-        check_z_flag=None,
-    ),
-    MicroCode(
-        AluLopSel.SEL_IR,
-        AluRopSel.SEL_ZERO,
-        DataIoMuxSel.SEL_DATA,
-        BrMuxSel.SEL_ALU,
-        DrMuxSel.SEL_DATA,
-        AluOp.ADD,
-        latch_ac=False,
-        latch_br=False,
-        latch_ir=False,
-        latch_dr=False,
-        latch_ar=True,
-        latch_sp=False,
-        latch_pc=False,
-        latch_io=False,
-        latch_data=False,
-        alias="fetch_pointer_address",
-    ),
-    MicroCode(
-        AluLopSel.SEL_ZERO,
-        AluRopSel.SEL_ZERO,
-        DataIoMuxSel.SEL_DATA,
-        BrMuxSel.SEL_ALU,
-        DrMuxSel.SEL_DATA,
-        AluOp.ADD,
-        latch_ac=False,
-        latch_br=False,
-        latch_ir=False,
-        latch_dr=True,
-        latch_ar=False,
-        latch_sp=False,
-        latch_pc=False,
-        latch_io=False,
-        latch_data=False,
-    ),
-    MicroCode(
-        AluLopSel.SEL_ZERO,
-        AluRopSel.SEL_DR,
-        DataIoMuxSel.SEL_DATA,
-        BrMuxSel.SEL_ALU,
-        DrMuxSel.SEL_DATA,
-        AluOp.ADD,
-        latch_ac=False,
-        latch_br=False,
-        latch_ir=False,
-        latch_dr=False,
-        latch_ar=True,
-        latch_sp=False,
-        latch_pc=False,
-        latch_io=False,
-        latch_data=False,
-    ),
-    MicroCode(
-        AluLopSel.SEL_ZERO,
-        AluRopSel.SEL_ZERO,
-        DataIoMuxSel.SEL_DATA,
-        BrMuxSel.SEL_ALU,
-        DrMuxSel.SEL_DATA,
-        AluOp.ADD,
-        latch_ac=False,
-        latch_br=False,
-        latch_ir=False,
-        latch_dr=True,
-        latch_ar=False,
-        latch_sp=False,
-        latch_pc=False,
-        latch_io=False,
-        latch_data=False,
-    ),
-    BranchingMicroCode(
-        branch_target="execution",
-        check_op_code=[], #todo
-        check_operand=OperandType.IMMEDIATE,
-        check_c_flag=None,
-        check_n_flag=None,
-        check_z_flag=None,
-        alias="check_load_operand"
-    ),
-    MicroCode(
-        AluLopSel.SEL_ZERO,
-        AluRopSel.SEL_ZERO,
-        DataIoMuxSel.SEL_DATA,
-        BrMuxSel.SEL_ALU,
-        DrMuxSel.SEL_DATA,
-        AluOp.ADD,
-        latch_ac=False,
-        latch_br=False,
-        latch_ir=False,
-        latch_dr=True,
-        latch_ar=False,
-        latch_sp=False,
-        latch_pc=False,
-        latch_io=False,
-        latch_data=False,
-        alias='fetch_operand'
-    ),
+    BranchingMicroCode("jump_routing"),
+    MicroCode(latch_dr=True, alias="get_address_from_stack"),
+    BranchingMicroCode("jnz", check_op_code=[OpCode.JNZ], alias="jump_routing"),
+    BranchingMicroCode("ja", check_op_code=[OpCode.JA]),
+    BranchingMicroCode("jae", check_op_code=[OpCode.JAE]),
+    BranchingMicroCode("jbe", check_op_code=[OpCode.JBE]),
+    BranchingMicroCode("jb", check_op_code=[OpCode.JB]),
+    BranchingMicroCode("jmp", check_op_code=[OpCode.JMP]),
+    BranchingMicroCode("jmp", check_z_flag=True, alias="jz"),
+    BranchingMicroCode("end"),
+    BranchingMicroCode("jmp", check_z_flag=False, alias="jnz"),
+    BranchingMicroCode("end"),
+    BranchingMicroCode("jmp", check_c_flag=True, check_z_flag=False, alias="ja"),
+    BranchingMicroCode("end"),
+    BranchingMicroCode("jmp", check_c_flag=True, alias="jae"),
+    BranchingMicroCode("end"),
+    BranchingMicroCode("jmp", check_z_flag=True, alias="jbe"),
+    BranchingMicroCode("jmp", check_c_flag=False, alias="jb"),
+    BranchingMicroCode("end"),
+    MicroCode(alu_rop_sel=AluRopSel.SEL_DR, latch_pc=True, alias="jmp"),
+    BranchingMicroCode("start", alias="end"),
 ]
 
 commands_alias_to_address_index: dict[str, int] = {}

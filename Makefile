@@ -13,5 +13,8 @@ format:
 lint:
 	poetry run python -m pylint $(CODE)
 
+clean:
+	rm -rf output
+
 output/%.json: %.lisq
 	poetry run python -m comp3.compiler $< $@

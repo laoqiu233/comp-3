@@ -87,16 +87,19 @@ class DataMemory(ValueStore):
     def __init__(self, data_in: ValueStore, address_in: ValueStore, memory: list[DataWord]):
         self.data_in = data_in
         self.address_in = address_in
-        self.memory = memory
+        self.memory: dict[int, int] = {}
+
+        for index, word in enumerate(memory):
+            self.memory[index] = word.value
 
     def latch(self):
         address = self.address_in.get_value()
         data = self.data_in.get_value()
-        self.memory[address].value = data
+        self.memory[address] = data
 
     def get_value(self) -> int:
         address = self.address_in.get_value()
-        return self.memory[address].value
+        return self.memory.get(address, 0)
 
 
 class ALU(ValueStore):
@@ -110,8 +113,8 @@ class ALU(ValueStore):
 
     @classmethod
     def get_compliment(cls, value: int) -> int:
-        value ^= 1 << 32 - 1
-        return value + 1
+        value ^= (1 << 32) - 1
+        return (value + 1) % (1 << 32)
 
     @classmethod
     def is_neg(cls, value: int) -> bool:
@@ -120,7 +123,7 @@ class ALU(ValueStore):
     def add(self, left: int, right: int) -> int:
         res = left + right
 
-        self.c_flag = res >= 1 << 32
+        self.c_flag = res >= (1 << 32)
         res %= 1 << 32
         self.z_flag = res == 0
         self.n_flag = ALU.is_neg(res)
@@ -145,16 +148,16 @@ class ALU(ValueStore):
             return res
         if self.alu_op == AluOp.SHL:
             res = left << right
-            if res >= 1 << 32:
+            if res >= (1 << 32):
                 self.c_flag = True
-            res &= 1 << 32 - 1
+            res %= (1 << 32)
             if ALU.is_neg(res):
                 self.n_flag = True
             if res == 0:
                 self.z_flag = True
             return res
         if self.alu_op == AluOp.NOT:
-            res = left ^ (1 << 32 - 1)
+            res = left ^ ((1 << 32) - 1)
             if ALU.is_neg(res):
                 self.n_flag = True
             if res == 0:
@@ -175,6 +178,29 @@ class ALU(ValueStore):
         if self.alu_op == AluOp.INC:
             return self.add(left, 1)
         if self.alu_op == AluOp.DEC:
-            return self.add(right, 1 << 32 - 1)
+            return self.add(right, (1 << 32) - 1)
 
         return self.check_bit_operations(left, right)
+
+
+class ProgramStatus:
+    def __init__(self, alu: ALU):
+        self.alu = alu
+        self.n = alu.n_flag
+        self.z = alu.z_flag
+        self.c = alu.c_flag
+        self.hlt = False
+
+    def latch(self):
+        self.alu.get_value()
+        self.n = self.alu.n_flag
+        self.z = self.alu.z_flag
+        self.c = self.alu.c_flag
+
+    def latch_hlt(self):
+        self.hlt = True
+
+    def clear(self):
+        self.n = False
+        self.z = False
+        self.c = False
