@@ -1,6 +1,8 @@
-from . import compile_pipeline
-from pathlib import Path
 import sys
+from pathlib import Path
+
+from . import compile_pipeline
+
 
 if __name__ == "__main__":
     input_file = Path(sys.argv[1])
