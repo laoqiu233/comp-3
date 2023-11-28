@@ -13,7 +13,7 @@
     )
 )
 
-(let ((i 0) (result false))
+(let ((i (- 232792560 2520)) (result false))
     (loop while (!= result true) do
         (set i (+ i 2520))
         (set result (check i))

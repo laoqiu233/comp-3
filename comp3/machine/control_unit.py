@@ -27,9 +27,6 @@ class ControlUnit:
         logging.info(self.datapath)
         self.total_ticks += 1
 
-        if self.total_ticks % 10000 == 0:
-            logging.warn("Program reached %s ticks...", self.total_ticks)
-
     def run(self):
         while not self.datapath.ps.hlt:
             self.execute_microcode()
