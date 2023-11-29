@@ -11,7 +11,7 @@ from comp3.machine.microcode import runtime
 logger = logging.getLogger("machine.main")
 
 
-def main(path_to_file: str, input_stream: str, statistics:bool=False):
+def main(path_to_file: str, input_stream: str, statistics: bool = False):
     with open(path_to_file, encoding="utf-8") as file:
         data = json.load(file)
     program = Program(**data)

@@ -5,6 +5,9 @@ from . import compile_pipeline
 
 
 if __name__ == "__main__":
+    if len(sys.argv) != 3:
+        print("Invalid arguments. Usage: compiler <input_file> <output_file>")
+
     input_file = Path(sys.argv[1])
     output_file = Path(sys.argv[2])
 
