@@ -24,7 +24,8 @@ def main(path_to_file: str, input_stream: str, statistics: bool = False):
 
     if statistics:
         logger.info(
-            "Program finished. Ticks taken: %s, time taken: %.2f, tick rate: %.2f",
+            "Program finished. Instructions executed: %s, ticks taken: %s, time taken: %.2f, tick rate: %.2f",
+            cpu.total_instructions,
             cpu.total_ticks,
             time_taken,
             cpu.total_ticks / time_taken,
