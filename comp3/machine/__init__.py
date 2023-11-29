@@ -25,11 +25,12 @@ def main(path_to_file: str, input_stream: str, statistics: bool = False):
     if statistics:
         logger.info(
             "Program finished. Instructions executed: %s, ticks taken: %s, time taken: %.2f, tick"
-            " rate: %.2f",
+            " rate: %.2f, ticks per instruction: %.2f",
             cpu.total_instructions,
             cpu.total_ticks,
             time_taken,
             cpu.total_ticks / time_taken,
+            cpu.total_ticks / cpu.total_instructions
         )
         logger.info("IO output: %s", "".join(map(chr, cpu.datapath.io_interface.output_buffer)))
         logger.info("IO output raw: %s", cpu.datapath.io_interface.output_buffer)
