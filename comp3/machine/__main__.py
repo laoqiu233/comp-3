@@ -1,11 +1,11 @@
 import json
+from time import time
 
 from comp3.common.instructions import Program
 from comp3.machine.control_unit import ControlUnit
 from comp3.machine.datapath import DataPath
 from comp3.machine.microcode import runtime
 
-from time import time
 
 if __name__ == "__main__":
     with open("output/examples/euler_problem.json", encoding="utf-8") as file:
@@ -19,6 +19,9 @@ if __name__ == "__main__":
         cpu.run()
         time_taken = time() - start
 
-        print(f"Program finished executing, ticks taken: {cpu.total_ticks}, time taken: {time_taken}s, tick rate: {round(cpu.total_ticks / time_taken, 2)}Hz")
+        print(
+            f"Program finished executing, ticks taken: {cpu.total_ticks}, time taken:"
+            f" {time_taken}s, tick rate: {round(cpu.total_ticks / time_taken, 2)}Hz"
+        )
         print("IO output: ", "".join(map(chr, cpu.datapath.io_interface.output_buffer)))
         print("IO output raw: ", cpu.datapath.io_interface.output_buffer)

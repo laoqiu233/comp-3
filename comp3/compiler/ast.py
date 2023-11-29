@@ -378,6 +378,7 @@ class LoadByPointerIdentifierNode(AstNode):
     def compile(self, backend: AstBackend):
         backend.visit_load_by_pointer_identifier_node(self)
 
+
 @dataclass
 class MultipleExpressionNode(AstNode):
     start_token: Token
@@ -575,6 +576,37 @@ class AstBuilder:
         end_token = self._get_next_token()  # Consume the closing parenthesis
         return LetNode(start_token, end_token, let_vars, let_body)
 
+    def parse_load_by_pointer_node(self, start_token: Token) -> AstNode:
+        # (@ identifier)
+        if self._peek_next_token().token_type != TokenType.IDENTIFIER:
+            raise unexpected_token(self._peek_next_token(), "an identifier")
+        identifier = self._get_next_token()
+        return LoadByPointerIdentifierNode(start_token, self._try_get_end_token(), identifier.value)
+
+    def parse_if_node(self, start_token: Token) -> AstNode:
+        # (if expr true_expr [false_expr])
+        condition = self.parse_node()
+        true_expr = self.parse_node()
+        false_expr = None
+        if self._peek_next_token().token_type != TokenType.RIGHT_PARENTHESIS:
+            false_expr = self.parse_node()
+        return IfNode(
+            start_token,
+            self._try_get_end_token(),
+            condition,
+            true_expr,
+            false_expr,
+        )
+
+    def parse_func_call_node(self, start_token: Token, token: Token) -> AstNode:
+        # (func_identifier [params])
+        params: list[AstNode] = []
+
+        while self._peek_next_token().token_type != TokenType.RIGHT_PARENTHESIS:
+            params.append(self.parse_node())
+
+        return FuncCallNode(start_token, self._get_next_token(), token.value, params)
+
     def parse_keywords(self, start_token: Token, token: Token, is_global: bool = False) -> AstNode:
         node: AstNode
 
@@ -608,41 +640,17 @@ class AstBuilder:
         elif token.value == "defun":
             node = self.parse_defun_node(start_token, token, is_global)
         elif token.value == "if":
-            # (if expr true_expr [false_expr])
-            condition = self.parse_node()
-            true_expr = self.parse_node()
-            false_expr = None
-            if self._peek_next_token().token_type != TokenType.RIGHT_PARENTHESIS:
-                false_expr = self.parse_node()
-            node = IfNode(
-                start_token,
-                self._try_get_end_token(),
-                condition,
-                true_expr,
-                false_expr,
-            )
+            node = self.parse_if_node(start_token)
         elif token.value == "alloc_str":
             node = self.parse_alloc_str_node(start_token, token, is_global)
         elif token.value == "@":
-            # (@ identifier)
-            if self._peek_next_token().token_type != TokenType.IDENTIFIER:
-                raise unexpected_token(self._peek_next_token(), "an identifier")
-            identifier = self._get_next_token()
-            node = LoadByPointerIdentifierNode(
-                start_token, self._try_get_end_token(), identifier.value
-            )
+            node = self.parse_load_by_pointer_node(start_token)
         else:
             # Everything else is assumed to be a function call
-            # (func_identifier [params])
-            params: list[AstNode] = []
-
-            while self._peek_next_token().token_type != TokenType.RIGHT_PARENTHESIS:
-                params.append(self.parse_node())
-
-            node = FuncCallNode(start_token, self._get_next_token(), token.value, params)
+            node = self.parse_func_call_node(start_token, token)
 
         return node
-    
+
     def parse_multiple_expressions_node(self, start_token: Token) -> AstNode:
         nodes: list[AstNode] = []
         while self._peek_next_token().token_type != TokenType.RIGHT_PARENTHESIS:

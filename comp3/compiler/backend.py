@@ -22,12 +22,12 @@ from comp3.compiler.ast import (
     LoadByPointerIdentifierNode,
     LoopWhileNode,
     MathNode,
+    MultipleExpressionNode,
     PutCharNode,
     SetNode,
     SetPtrNode,
     StrAllocNode,
     StringLiteralNode,
-    MultipleExpressionNode
 )
 
 
@@ -184,7 +184,7 @@ class Comp3Backend(AstBackend):
             MathNode.MathOp.AND: OpCode.AND,
             MathNode.MathOp.OR: OpCode.OR,
             MathNode.MathOp.SHL: OpCode.SHL,
-            MathNode.MathOp.SHR: OpCode.SHR
+            MathNode.MathOp.SHR: OpCode.SHR,
         }
         branch_to_op_code = {
             MathNode.MathOp.EQ: OpCode.JZ,

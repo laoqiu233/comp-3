@@ -1,6 +1,8 @@
+import logging
+
 from comp3.machine.datapath import DataPath
 from comp3.machine.microcode import BranchingMicroCode, MicroCode
-import logging
+
 
 class ControlUnit:
     def __init__(self, datapath: DataPath, runtime: list[MicroCode | BranchingMicroCode]):
