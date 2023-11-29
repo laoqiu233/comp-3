@@ -19,7 +19,8 @@ class ControlUnit:
         logger.debug("Microcode %s: %s", self.mpc, self.runtime[self.mpc])
         microcode = self.runtime[self.mpc]
         # Instruction fetch
-        if self.mpc == 0: self.total_instructions += 1
+        if self.mpc == 0:
+            self.total_instructions += 1
         self.mpc += 1
 
         if isinstance(microcode, MicroCode):
