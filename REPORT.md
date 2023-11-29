@@ -80,7 +80,7 @@
 
 - В языке отсутствует константы, поэтому здесь не будут описаны
 - Числовые литералы напрямую загружаются в аккумулятор, когда они встречаются
-- Различные строковые литералы будут по очереди статически выделены в начале памяти данных, и когда они встречаются, используется их адрес в памяти. Одинаковые строковые литералы будут переиспользоваться
+- Различные строковые литералы будут по очереди статически выделены в начале памяти данных, и когда они встречаются, используется их адрес в памяти. Одинаковые строковые литералы будут переиспользоваться. По варианту, символы будут храниться компактно, т.е. в одном машинном слове 32-бит хранятся 4 символа.
 - Булевые литералы превращаются в числовые, где 1 - true, а 0 - false
 - Строковые буфферы также статически выделяются в памяти данных при компиляции, изначально заполнены нулями, при их встрече используется адрес начала буффера.
 - При использовании выражения `let` созданные переменные будут помещены на стек, и их область видимости ограничена выражением `let`
@@ -170,7 +170,7 @@ $ python -m comp3.compiler <input_file> <output_file>
 
 ## Модель процессора
 ### Data path
-![comp3](designs/comp3.png)
+![comp3](resources/comp3.png)
 
 Сигналы (обрабатываются за один такт, реализуются в [микрокомандах](comp3/machine/microcode.py)):
 - latch_[regs] - записать поступаемое в регистр значение в регистр
@@ -208,7 +208,7 @@ $ python -m comp3.compiler <input_file> <output_file>
 ```bash
 $ poetry install
 $ poetry shell
-$ poetry run python -m comp3.machine <input_file> <input_stream> [show-statistics]
+$ poetry run python -m comp3.machine <input_file> [<input_stream>] [--show-statistics, --logs]
 ```
 
 ## Тестирование
@@ -299,9 +299,11 @@ poetry run python -m comp3.compiler examples/hello.lisq output/examples/hello.js
 poetry run python -m comp3.compiler examples/euler_problem_1.lisq output/examples/euler_problem_1.json
 poetry run python -m comp3.compiler examples/hello_user_name.lisq output/examples/hello_user_name.json
 poetry run python -m comp3.compiler examples/cat.lisq output/examples/cat.json
-$ poetry run python -m comp3.machine output/examples/cat.json foo show-statistics
-
+$ poetry run python -m comp3.machine output/examples/cat.json foo --show-statistics --logs
+[Results omitted]
 ```
+
+Для просмотра логов можно посмотреть в [этот](resources/cat_res) файл
 
 Пример проверки исходного кода:
 ```bash

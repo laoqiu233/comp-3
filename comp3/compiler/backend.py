@@ -607,7 +607,7 @@ class CompilerFacade:
                 for j in range(3, -1, -1):
                     val <<= 8
                     if i + j < len(s):
-                        val += s[i+j]
+                        val += s[i + j]
                 data_memory.append(DataWord(value=val))
             data_memory[literal_addr].identifier = literal
 

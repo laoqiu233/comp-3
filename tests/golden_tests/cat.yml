@@ -6487,3 +6487,4 @@ out_logs: |
   DEBUG    machine.control_unit:control_unit.py:18 Microcode 61: HLT (hlt)
   DEBUG    machine.control_unit:control_unit.py:32 AC: 0 | AR: 19 | SP: 4096 | PC: 21 | IR: {"instr_index":20,"op_code":"HLT","operand_type":"no_operand","operand":0,"comment":""} | DR: 19 | BR: 20 | N: False | Z: True | C: False
 out: |
+  Hello world!
