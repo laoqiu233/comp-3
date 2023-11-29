@@ -1,27 +1,12 @@
-import json
-from time import time
+import sys
 
-from comp3.common.instructions import Program
-from comp3.machine.control_unit import ControlUnit
-from comp3.machine.datapath import DataPath
-from comp3.machine.microcode import runtime
+from comp3.machine import main
 
 
 if __name__ == "__main__":
-    with open("output/examples/euler_problem.json", encoding="utf-8") as file:
-        data = json.load(file)
-        program = Program(**data)
-        input_stream = list(input("IO input: "))
-        dp = DataPath(program, input_stream)
-        cpu = ControlUnit(dp, runtime)
+    if len(sys.argv) != 3 or (len(sys.argv) == 4 and sys.argv[3] != 'show-statistics'):
+        print("Invalid arguments. Usage: machine <source program> <input string> [show-statistics]")
 
-        start = time()
-        cpu.run()
-        time_taken = time() - start
+    statistics = len(sys.argv) == 4 and sys.argv[3] == 'show-statistics'
 
-        print(
-            f"Program finished executing, ticks taken: {cpu.total_ticks}, time taken:"
-            f" {time_taken}s, tick rate: {round(cpu.total_ticks / time_taken, 2)}Hz"
-        )
-        print("IO output: ", "".join(map(chr, cpu.datapath.io_interface.output_buffer)))
-        print("IO output raw: ", cpu.datapath.io_interface.output_buffer)
+    main(sys.argv[1], sys.argv[2], statistics)

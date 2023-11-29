@@ -4,6 +4,9 @@ from comp3.machine.datapath import DataPath
 from comp3.machine.microcode import BranchingMicroCode, MicroCode
 
 
+logger = logging.getLogger("machine.control_unit")
+
+
 class ControlUnit:
     def __init__(self, datapath: DataPath, runtime: list[MicroCode | BranchingMicroCode]):
         self.runtime = runtime
@@ -12,7 +15,7 @@ class ControlUnit:
         self.total_ticks = 0
 
     def execute_microcode(self):
-        logging.debug("Microcode %s: %s", self.mpc, self.runtime[self.mpc])
+        logger.debug("Microcode %s: %s", self.mpc, self.runtime[self.mpc])
         microcode = self.runtime[self.mpc]
         self.mpc += 1
 
@@ -26,7 +29,7 @@ class ControlUnit:
                     )  # This should not happen, I hope
                 self.mpc = microcode.branch_target
 
-        logging.debug(self.datapath)
+        logger.debug(self.datapath)
         self.total_ticks += 1
 
     def run(self):
