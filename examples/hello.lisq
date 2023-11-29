@@ -1,4 +1,4 @@
 #include lisq_lib/math.lisq
 #include lisq_lib/strings.lisq
 
-(print_string "hello world")
+(print_string "hello world!")

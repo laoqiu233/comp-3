@@ -5,7 +5,7 @@ from comp3.machine.components import (
     DataMemory,
     InstructionMemory,
     InstructionRegister,
-    IoIntercae,
+    IoInterface,
     Mux,
     ProgramStatus,
     Register,
@@ -34,7 +34,7 @@ class DataPath:
         self.ir = InstructionRegister(self.instruction_memory)
 
         self.data_memory = DataMemory(self.alu, self.ar, program.data_memory)
-        self.io_interface = IoIntercae(self.alu, input_stream)
+        self.io_interface = IoInterface(self.alu, input_stream)
 
         self.data_io_mux = Mux(self.data_memory, self.io_interface)
         self.dr_mux = Mux(self.alu, self.data_io_mux)

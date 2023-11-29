@@ -31,7 +31,7 @@ def main(path_to_file: str, input_stream: str, statistics: bool = False):
         )
         logger.info("IO output: %s", "".join(map(chr, cpu.datapath.io_interface.output_buffer)))
         logger.info("IO output raw: %s", cpu.datapath.io_interface.output_buffer)
-        print("".join(map(chr, cpu.datapath.io_interface.output_buffer)))
+    print("".join(map(chr, cpu.datapath.io_interface.output_buffer)))
 
 
 __all__ = ["main"]

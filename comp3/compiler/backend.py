@@ -599,15 +599,21 @@ class CompilerFacade:
 
         for literal in self.string_literals:
             literal_addr = len(data_memory)
-            for char in literal:
-                data_memory.append(DataWord(value=ord(char)))
+            s = list(map(ord, literal))
             # C-string end
-            data_memory.append(DataWord(value=0))
+            s.append(0)
+            for i in range(0, len(s), 4):
+                val = 0
+                for j in range(3, -1, -1):
+                    val <<= 8
+                    if i + j < len(s):
+                        val += s[i+j]
+                data_memory.append(DataWord(value=val))
             data_memory[literal_addr].identifier = literal
 
         for buffer_identifier, size in self.string_buffers.items():
             buffer_addr = len(data_memory)
-            for _ in range(size):
+            for _ in range((size + 3) // 4):
                 data_memory.append(DataWord(value=0))
             data_memory[buffer_addr].identifier = buffer_identifier
 

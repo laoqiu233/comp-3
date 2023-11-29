@@ -66,7 +66,7 @@ class InstructionRegister(ValueStore):
         return self.value
 
 
-class IoIntercae(ValueStore):
+class IoInterface(ValueStore):
     def __init__(self, input_reg: ValueStore, char_stream: list[str]):
         self.input_reg = input_reg
         self.char_stream = char_stream
