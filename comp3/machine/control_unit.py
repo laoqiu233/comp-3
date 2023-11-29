@@ -10,7 +10,7 @@ class ControlUnit:
         self.total_ticks = 0
 
     def execute_microcode(self):
-        logging.info("Microcode %s: %s", self.mpc, self.runtime[self.mpc])
+        logging.debug("Microcode %s: %s", self.mpc, self.runtime[self.mpc])
         microcode = self.runtime[self.mpc]
         self.mpc += 1
 
@@ -24,7 +24,7 @@ class ControlUnit:
                     )  # This should not happen, I hope
                 self.mpc = microcode.branch_target
 
-        logging.info(self.datapath)
+        logging.debug(self.datapath)
         self.total_ticks += 1
 
     def run(self):
