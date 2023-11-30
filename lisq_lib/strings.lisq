@@ -24,12 +24,24 @@
 )
 
 (defun print_string (s)
-    (let ((char 0) (i 0))
-        (set char (get_string_char s i))
-        (loop while (!= char 0) do
-            (put_char char)
-            (set i (+ i 1))
-            (set char (get_string_char s i))
+    (let ( (char 0) (j 0) (continue true) )
+        (set char (@ s))
+        (loop while continue do
+            (if (= (& char 255) 0)
+                (set continue false)
+                (
+                    (put_char char)
+                    (set char (>> char 8))
+                    (set j (+ j 1))
+                    (if (>= j 4)
+                        (
+                            (set j 0)
+                            (set s (+ s 1))
+                            (set char (@ s))
+                        )
+                    )
+                )
+            )
         )
     )
 )

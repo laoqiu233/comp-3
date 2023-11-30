@@ -221,7 +221,7 @@ $ poetry run python -m comp3.machine <input_file> [<input_stream>] [--show-stati
 
 Было сделано два вида тестов:
 - [Unit-tests на компонент АЛУ](tests/machine/test_alu.py)
-- [Golden tests на cat и hello](tests/golden_tests)
+- [Golden tests на cat и hello_user_name](tests/golden_tests)
 
 Запуск тестов:
 ```bash

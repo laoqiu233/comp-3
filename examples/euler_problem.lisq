@@ -1,5 +1,5 @@
-#include lisq_lib/math.lisq
 #include lisq_lib/strings.lisq
+#include lisq_lib/math.lisq
 
 (defun check (x)
     (let ((result true) (i 10))
