@@ -1,0 +1,3 @@
+#include lisq_lib/math.lisq
+#include lisq_lib/strings.lisq
+(print_int (divide 52 10))
