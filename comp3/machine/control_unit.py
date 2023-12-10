@@ -1,8 +1,8 @@
 import logging
 
+from comp3.common.instructions import OpCode
 from comp3.machine.datapath import DataPath
 from comp3.machine.microcode import BranchingMicroCode, MicroCode
-from comp3.common.instructions import OpCode
 
 
 logger = logging.getLogger("machine.control_unit")
@@ -19,7 +19,7 @@ class ControlUnit:
         self._op_code_to_address: dict[OpCode, int] = {}
 
         for index, instr in enumerate(runtime):
-            if instr.alias is not None and instr.alias in OpCode._member_map_:
+            if instr.alias is not None and isinstance(instr.alias, OpCode):
                 self._op_code_to_address[instr.alias] = index
 
     def execute_microcode(self):

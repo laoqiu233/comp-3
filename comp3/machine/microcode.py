@@ -139,7 +139,7 @@ class BranchingMicroCode:
     """
 
     branch_target: Optional[int | str]  # Micro code address or alias
-                                        # If None, uses result of op_code decoder
+    # If None, uses result of op_code decoder
 
     check_op_code: list[OpCode] = field(default_factory=list)
     check_operand_type: list[OperandType] = field(default_factory=list)
@@ -183,7 +183,10 @@ class BranchingMicroCode:
         return res
 
     def __str__(self) -> str:
-        s = f"JUMP TO {self.branch_target if self.branch_target is not None else 'DECODE(OP_CODE)'} IF "
+        s = (
+            "JUMP TO"
+            f" {self.branch_target if self.branch_target is not None else 'DECODE(OP_CODE)'} IF "
+        )
 
         if len(self.check_op_code) != 0:
             s += f"OP_CODE IN {list(map(lambda x: x.value, self.check_op_code))} "
@@ -251,7 +254,7 @@ runtime: list[MicroCode | BranchingMicroCode] = [
             OpCode.JA,
             OpCode.JAE,
             OpCode.JMP,
-            OpCode.ST
+            OpCode.ST,
         ],
         alias="execute",
     ),
@@ -264,7 +267,7 @@ runtime: list[MicroCode | BranchingMicroCode] = [
     MicroCode(latch_dr=True),
     BranchingMicroCode("execute2"),
     MicroCode(data_io_mux_sel=DataIoMuxSel.SEL_IO, latch_dr=True, alias="fetch_from_io"),
-    BranchingMicroCode(None, alias='execute2'),
+    BranchingMicroCode(None, alias="execute2"),
     MicroCode(alu_rop_sel=AluRopSel.SEL_DR, latch_ac=True, alias=OpCode.LD),
     BranchingMicroCode("end"),
     BranchingMicroCode(
