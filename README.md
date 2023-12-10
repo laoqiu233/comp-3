@@ -385,7 +385,7 @@ $ poetry run python -m comp3.machine output/examples/cat.json foo --show-statist
 [Results omitted]
 ```
 
-Для просмотра логов можно посмотреть в [этот](resources/cat_res) файл
+Для просмотра логов можно посмотреть в [этот](tests/golden_tests/cat.yml) файл
 
 Пример проверки исходного кода:
 ```bash
@@ -445,7 +445,7 @@ Your code has been rated at 10.00/10 (previous run: 10.00/10, +0.00)
 ## Cтатистика по задачам
 ```
 | ФИО        | алг             | LoC | code байт | code инстр. | инстр. | такт.  |
-| Цю Тяньшэн | hello           | 3   | -         | 537         | 8309   | 138149 |
-| Цю Тяньшэн | cat             | 7   | -         | 20          | 58     | 995    |
-| Цю Тяньшэн | hello_user_name | 14  | -         | 602         | 10039  | 164973 |
+| Цю Тяньшэн | hello           | 3   | -         | 558         | 575    | 8007   |
+| Цю Тяньшэн | cat             | 7   | -         | 21          | 58     | 804    |
+| Цю Тяньшэн | hello_user_name | 14  | -         | 623         | 1773   | 23822  |
 ```
