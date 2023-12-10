@@ -4,6 +4,8 @@
 - Группа: P33312
 - Вариант: `lisp | acc | harv | mc | tick | struct | stream | mem | cstr | prob5 | [4]char`
 
+[![CI status](https://github.com/laoqiu233/comp-3/actions/workflows/python-app.yml/badge.svg)](https://github.com/laoqiu233/comp-3/actions/workflows/python-app.yml)
+
 ## Язык программирования
 
 По варианту необходимо реализовать LISP-подобный язык.
@@ -169,10 +171,10 @@ $ python -m comp3.compiler <input_file> <output_file>
 ```
 
 ## Модель процессора
-### Data path
-![comp3](resources/comp3.png)
+### Data Path
+![comp3](resources/COMP3_datapath.png)
 
-Сигналы (обрабатываются за один такт, реализуются в [микрокомандах](comp3/machine/microcode.py)):
+Сигналы (обрабатываются за один такт, реализуются в [микрокомандах](comp3/machine/microcode.py), на схеме отображены черными пунктирными линиями):
 - latch_[regs] - записать поступаемое в регистр значение в регистр
 - write_io_latch - вывести символ, поступаемый в IO интерфейс, поскольку ввод/вывод посимвольный, а шины - 32 битные, IO интерфейс будет брать младшие 8 бит.
 - write_data_latch - записать поступаемое в память данных значение в ячейку, указанную в регистре AR
@@ -192,10 +194,14 @@ $ python -m comp3.compiler <input_file> <output_file>
 - data_io_sel - Сontrol Unit по адрему будет определять, брать данные из памяти или IO устройства
 - dr_sel - Брать данные из памяти или из выхода АЛУ
 
-Флаги:
-- Z - нулевое значение в выходе АЛУ
-- C - при сложении был перенос в 32 бит (если считать с 0)
-- N - 31 бит установлен
+Данные подключенные к Control Unit (желтые пунктирные линии):
+- op_code
+- operand
+- operand_type
+- Флаги:
+  - Z - нулевое значение в выходе АЛУ
+  - C - при сложении был перенос в 32 бит (если считать с 0)
+  - N - 31 бит установлен
 
 ### Control Unit
 Занимается декодированием микрокоманд
