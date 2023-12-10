@@ -4,7 +4,6 @@ out: |
   foo
 out_prog: |-
   {
-    "start_addr": 0,
     "instructions": [
       {
         "instr_index": 0,

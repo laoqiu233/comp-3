@@ -28,7 +28,6 @@ class DataPath:
         self.sp = Register(self.alu)
         self.sp.val = 4096  # Initialized to point to 1 above 4kb
         self.pc = Register(self.alu)
-        self.pc.val = program.start_addr
 
         self.instruction_memory = InstructionMemory(self.pc, program.instructions)
         self.ir = InstructionRegister(self.instruction_memory)

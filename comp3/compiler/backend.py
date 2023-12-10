@@ -626,7 +626,14 @@ class CompilerFacade:
             backend.visit(node)
             self.process_backend_results(backend)
 
-        program_start = len(self.instructions)
+        program_start = len(self.instructions) + 1
+        if program_start != 1:
+            self.instructions.insert(0, Instruction(
+                op_code=OpCode.JMP,
+                operand_type=OperandType.ADDRESS,
+                operand=program_start,
+                comment="Jump to program start"
+            ))
 
         # Process everything else
         for node in filter(lambda x: not is_global(x), nodes):
@@ -641,7 +648,7 @@ class CompilerFacade:
         data_memory = self.build_data_memory()
 
         program = Program(
-            start_addr=program_start, instructions=self.instructions, data_memory=data_memory
+            instructions=self.instructions, data_memory=data_memory
         )
         replace_stubs(program)
         index_instructions(program)

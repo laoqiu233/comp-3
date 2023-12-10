@@ -83,6 +83,5 @@ class InstrStubInstruction(Instruction):
 
 
 class Program(BaseModel):
-    start_addr: int
     instructions: list[Instruction]
     data_memory: list[DataWord]
