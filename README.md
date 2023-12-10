@@ -215,89 +215,73 @@ $ python -m comp3.compiler <input_file> <output_file>
 Листинг микрокоманд:
 ```
 0 IR <- INSTR_MEMORY (start)
-1 BR <- PC 
-2 PC <- AluLopSel.SEL_BR AluOp.INC AluRopSel.SEL_ZERO 
-3 JUMP TO 54 IF OP_CODE IN ['PUSH'] 
-4 JUMP TO 58 IF OP_CODE IN ['POP'] 
-5 JUMP TO 61 IF OP_CODE IN ['HLT'] 
-6 JUMP TO 11 IF OPERNAD_TYPE IN ['pointer_address'] 
-7 JUMP TO 14 IF OPERNAD_TYPE IN ['stack_offset', 'pointer_stack_offset'] 
-8 DR <- AluLopSel.SEL_IR AluOp.ADD AluRopSel.SEL_ZERO (fetch_immediate_or_no_operand_or_address)
-9 JUMP TO 18 IF OPERNAD_TYPE IN ['address'] 
-10 JUMP TO 19 IF 
-11 AR <- AluLopSel.SEL_IR AluOp.ADD AluRopSel.SEL_ZERO (fetch_pointer_address)
-12 DR <- DataIoMuxSel.SEL_DATA 
-13 JUMP TO 18 IF 
-14 DR <- AluLopSel.SEL_IR AluOp.ADD AluRopSel.SEL_SP (fetch_stack_offset)
-15 JUMP TO 18 IF OPERNAD_TYPE IN ['stack_offset'] 
-16 AR <- AluLopSel.SEL_ZERO AluOp.ADD AluRopSel.SEL_DR 
-17 DR <- DataIoMuxSel.SEL_DATA 
-18 AR <- AluLopSel.SEL_ZERO AluOp.ADD AluRopSel.SEL_DR (fetch_operand)
-19 JUMP TO 65 IF OP_CODE IN ['JZ', 'JNZ', 'JB', 'JBE', 'JA', 'JAE', 'JMP'] (execute)
-20 JUMP TO 36 IF OP_CODE IN ['ST'] 
-21 JUMP TO 26 IF OPERNAD_TYPE IN ['immediate', 'no_operand'] 
-22 JUMP TO 25 IF OPERNAD_TYPE IN ['address'] OPERAND = 52 
-23 DR <- DataIoMuxSel.SEL_DATA 
-24 JUMP TO 26 IF 
-25 DR <- DataIoMuxSel.SEL_IO (fetch_from_io)
-26 JUMP TO 34 IF OP_CODE IN ['LD'] (execute2)
-27 JUMP TO 63 IF OP_CODE IN ['CMP'] 
-28 JUMP TO 41 IF OP_CODE IN ['ADD'] 
-29 JUMP TO 43 IF OP_CODE IN ['SUB'] 
-30 JUMP TO 45 IF OP_CODE IN ['AND'] 
-31 JUMP TO 47 IF OP_CODE IN ['OR'] 
-32 JUMP TO 49 IF OP_CODE IN ['SHL'] 
-33 JUMP TO 51 IF OP_CODE IN ['SHR'] 
-34 AC <- AluLopSel.SEL_ZERO AluOp.ADD AluRopSel.SEL_DR (ld)
-35 JUMP TO 83 IF 
-36 JUMP TO 39 IF OPERNAD_TYPE IN ['address'] OPERAND = 69 (st)
-37 DATA <- AluLopSel.SEL_AC AluOp.ADD AluRopSel.SEL_ZERO 
-38 JUMP TO 83 IF 
-39 IO <- AluLopSel.SEL_AC AluOp.ADD AluRopSel.SEL_ZERO (st_to_io)
-40 JUMP TO 83 IF 
-41 BR <- AluLopSel.SEL_AC AluOp.ADD AluRopSel.SEL_DR PS <- NZC(AluLopSel.SEL_AC AluOp.ADD AluRopSel.SEL_DR) (add)
-42 JUMP TO 52 IF 
-43 BR <- AluLopSel.SEL_AC AluOp.SUB AluRopSel.SEL_DR PS <- NZC(AluLopSel.SEL_AC AluOp.SUB AluRopSel.SEL_DR) (sub)
-44 JUMP TO 52 IF 
-45 BR <- AluLopSel.SEL_AC AluOp.AND AluRopSel.SEL_DR PS <- NZC(AluLopSel.SEL_AC AluOp.AND AluRopSel.SEL_DR) (and)
-46 JUMP TO 52 IF 
-47 BR <- AluLopSel.SEL_AC AluOp.OR AluRopSel.SEL_DR PS <- NZC(AluLopSel.SEL_AC AluOp.OR AluRopSel.SEL_DR) (or)
-48 JUMP TO 52 IF 
-49 BR <- AluLopSel.SEL_AC AluOp.SHL AluRopSel.SEL_DR PS <- NZC(AluLopSel.SEL_AC AluOp.SHL AluRopSel.SEL_DR) (shl)
-50 JUMP TO 52 IF 
-51 BR <- AluLopSel.SEL_AC AluOp.SHR AluRopSel.SEL_DR PS <- NZC(AluLopSel.SEL_AC AluOp.SHR AluRopSel.SEL_DR) (shr)
-52 AC <- AluLopSel.SEL_BR AluOp.ADD AluRopSel.SEL_ZERO (math_end)
-53 JUMP TO 83 IF 
-54 BR <- AluLopSel.SEL_ZERO AluOp.DEC AluRopSel.SEL_SP (push)
-55 AR <- AluLopSel.SEL_BR AluOp.ADD AluRopSel.SEL_ZERO SP <- AluLopSel.SEL_BR AluOp.ADD AluRopSel.SEL_ZERO 
-56 DATA <- AluLopSel.SEL_AC AluOp.ADD AluRopSel.SEL_ZERO 
-57 JUMP TO 83 IF 
-58 BR <- AluLopSel.SEL_ZERO AluOp.ADD AluRopSel.SEL_SP (pop)
-59 SP <- AluLopSel.SEL_BR AluOp.INC AluRopSel.SEL_ZERO 
-60 JUMP TO 83 IF 
-61 HLT (hlt)
-62 JUMP TO 83 IF 
-63 PS <- NZC(AluLopSel.SEL_AC AluOp.SUB AluRopSel.SEL_DR) (cmp)
-64 JUMP TO 83 IF 
-65 JUMP TO 73 IF OP_CODE IN ['JNZ'] (jump_routing)
-66 JUMP TO 76 IF OP_CODE IN ['JA'] 
-67 JUMP TO 75 IF OP_CODE IN ['JAE'] 
-68 JUMP TO 79 IF OP_CODE IN ['JBE'] 
-69 JUMP TO 80 IF OP_CODE IN ['JB'] 
-70 JUMP TO 82 IF OP_CODE IN ['JMP'] 
-71 JUMP TO 82 IF Z = True (jz)
-72 JUMP TO 83 IF 
-73 JUMP TO 82 IF Z = False (jnz)
-74 JUMP TO 83 IF 
-75 JUMP TO 82 IF N = False (jae)
-76 JUMP TO 82 IF N = False Z = False (ja)
-77 JUMP TO 83 IF 
-78 JUMP TO 83 IF 
-79 JUMP TO 82 IF N = True (jbe)
-80 JUMP TO 82 IF N = True Z = False (jb)
-81 JUMP TO 83 IF 
-82 PC <- AluLopSel.SEL_ZERO AluOp.ADD AluRopSel.SEL_DR (jmp)
-83 JUMP TO 0 IF (end)
+1 BR <- PC
+2 PC <- AluLopSel.SEL_BR AluOp.INC AluRopSel.SEL_ZERO
+3 JUMP TO DECODE(OP_CODE) IF OP_CODE IN ['PUSH', 'POP', 'HLT']
+4 JUMP TO 9 IF OPERNAD_TYPE IN ['pointer_address']
+5 JUMP TO 12 IF OPERNAD_TYPE IN ['stack_offset', 'pointer_stack_offset']
+6 DR <- AluLopSel.SEL_IR AluOp.ADD AluRopSel.SEL_ZERO (fetch_immediate_or_no_operand_or_address)
+7 JUMP TO 16 IF OPERNAD_TYPE IN ['address']
+8 JUMP TO 17 IF
+9 AR <- AluLopSel.SEL_IR AluOp.ADD AluRopSel.SEL_ZERO (fetch_pointer_address)
+10 DR <- DataIoMuxSel.SEL_DATA
+11 JUMP TO 16 IF
+12 DR <- AluLopSel.SEL_IR AluOp.ADD AluRopSel.SEL_SP (fetch_stack_offset)
+13 JUMP TO 16 IF OPERNAD_TYPE IN ['stack_offset']
+14 AR <- AluLopSel.SEL_ZERO AluOp.ADD AluRopSel.SEL_DR
+15 DR <- DataIoMuxSel.SEL_DATA
+16 AR <- AluLopSel.SEL_ZERO AluOp.ADD AluRopSel.SEL_DR (fetch_operand)
+17 JUMP TO DECODE(OP_CODE) IF OP_CODE IN ['JZ', 'JNZ', 'JB', 'JBE', 'JA', 'JAE', 'JMP', 'ST'] (execute)
+18 JUMP TO 23 IF OPERNAD_TYPE IN ['immediate', 'no_operand']
+19 JUMP TO 22 IF OPERNAD_TYPE IN ['address'] OPERAND = 52
+20 DR <- DataIoMuxSel.SEL_DATA
+21 JUMP TO 23 IF
+22 DR <- DataIoMuxSel.SEL_IO (fetch_from_io)
+23 JUMP TO DECODE(OP_CODE) IF (execute2)
+24 AC <- AluLopSel.SEL_ZERO AluOp.ADD AluRopSel.SEL_DR (OpCode.LD)
+25 JUMP TO 67 IF
+26 JUMP TO 29 IF OPERNAD_TYPE IN ['address'] OPERAND = 69 (OpCode.ST)
+27 DATA <- AluLopSel.SEL_AC AluOp.ADD AluRopSel.SEL_ZERO
+28 JUMP TO 67 IF
+29 IO <- AluLopSel.SEL_AC AluOp.ADD AluRopSel.SEL_ZERO (st_to_io)
+30 JUMP TO 67 IF
+31 BR <- AluLopSel.SEL_AC AluOp.ADD AluRopSel.SEL_DR PS <- NZC(AluLopSel.SEL_AC AluOp.ADD AluRopSel.SEL_DR) (OpCode.ADD)
+32 JUMP TO 42 IF
+33 BR <- AluLopSel.SEL_AC AluOp.SUB AluRopSel.SEL_DR PS <- NZC(AluLopSel.SEL_AC AluOp.SUB AluRopSel.SEL_DR) (OpCode.SUB)
+34 JUMP TO 42 IF
+35 BR <- AluLopSel.SEL_AC AluOp.AND AluRopSel.SEL_DR PS <- NZC(AluLopSel.SEL_AC AluOp.AND AluRopSel.SEL_DR) (OpCode.AND)
+36 JUMP TO 42 IF
+37 BR <- AluLopSel.SEL_AC AluOp.OR AluRopSel.SEL_DR PS <- NZC(AluLopSel.SEL_AC AluOp.OR AluRopSel.SEL_DR) (OpCode.OR)
+38 JUMP TO 42 IF
+39 BR <- AluLopSel.SEL_AC AluOp.SHL AluRopSel.SEL_DR PS <- NZC(AluLopSel.SEL_AC AluOp.SHL AluRopSel.SEL_DR) (OpCode.SHL)
+40 JUMP TO 42 IF
+41 BR <- AluLopSel.SEL_AC AluOp.SHR AluRopSel.SEL_DR PS <- NZC(AluLopSel.SEL_AC AluOp.SHR AluRopSel.SEL_DR) (OpCode.SHR)
+42 AC <- AluLopSel.SEL_BR AluOp.ADD AluRopSel.SEL_ZERO (math_end)
+43 JUMP TO 67 IF
+44 BR <- AluLopSel.SEL_ZERO AluOp.DEC AluRopSel.SEL_SP (OpCode.PUSH)
+45 AR <- AluLopSel.SEL_BR AluOp.ADD AluRopSel.SEL_ZERO SP <- AluLopSel.SEL_BR AluOp.ADD AluRopSel.SEL_ZERO
+46 DATA <- AluLopSel.SEL_AC AluOp.ADD AluRopSel.SEL_ZERO
+47 JUMP TO 67 IF
+48 BR <- AluLopSel.SEL_ZERO AluOp.ADD AluRopSel.SEL_SP (OpCode.POP)
+49 SP <- AluLopSel.SEL_BR AluOp.INC AluRopSel.SEL_ZERO
+50 JUMP TO 67 IF
+51 HLT (OpCode.HLT)
+52 JUMP TO 67 IF
+53 PS <- NZC(AluLopSel.SEL_AC AluOp.SUB AluRopSel.SEL_DR) (OpCode.CMP)
+54 JUMP TO 67 IF
+55 JUMP TO 66 IF Z = True (OpCode.JZ)
+56 JUMP TO 67 IF
+57 JUMP TO 66 IF Z = False (OpCode.JNZ)
+58 JUMP TO 67 IF
+59 JUMP TO 66 IF N = False (OpCode.JAE)
+60 JUMP TO 66 IF N = False Z = False (OpCode.JA)
+61 JUMP TO 67 IF
+62 JUMP TO 67 IF
+63 JUMP TO 66 IF N = True (OpCode.JBE)
+64 JUMP TO 66 IF N = True Z = False (OpCode.JB)
+65 JUMP TO 67 IF
+66 PC <- AluLopSel.SEL_ZERO AluOp.ADD AluRopSel.SEL_DR (OpCode.JMP)
+67 JUMP TO 0 IF (end)
 ```
 
 Запуск:
@@ -317,7 +301,7 @@ $ poetry run python -m comp3.machine <input_file> [<input_stream>] [--show-stati
 
 Было сделано два вида тестов:
 - [Unit-tests на компонент АЛУ](tests/machine/test_alu.py)
-- [Golden tests на cat и hello_user_name](tests/golden_tests)
+- [Golden tests на программы](tests/golden_tests)
 
 Запуск тестов:
 ```bash
