@@ -15,7 +15,7 @@ def compile_pipeline(source: TextIO, output: TextIO):
     tokens = lexer.lex()
     nodes = build_nodes_from_tokens(tokens)
     program = build_program_from_nodes(nodes)
-    json.dump(program.model_dump(), output)
+    json.dump(program.model_dump(), output, indent=2)
 
 
 __all__ = ["compile_pipeline"]

@@ -10,6 +10,8 @@ from comp3.machine import main
 @pytest.mark.golden_test("golden_tests/*.yml")
 def test_golden(golden, caplog, capsys, tmpdir):
     caplog.set_level(logging.DEBUG)
+    log_formatter = logging.Formatter("%(message)s")
+    caplog.handler.setFormatter(log_formatter)
 
     compiled_prog_buffer = StringIO()
     with open(golden["in_source"], encoding="utf-8") as code_source:
@@ -24,4 +26,4 @@ def test_golden(golden, caplog, capsys, tmpdir):
     main(tmpdir / "tmp_prog.json", golden["in"])
 
     assert caplog.text == golden.out["out_logs"]
-    assert capsys.readouterr().out == golden.out["out"]
+    assert capsys.readouterr().out == golden["out"]
