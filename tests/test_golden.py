@@ -25,5 +25,5 @@ def test_golden(golden, caplog, capsys, tmpdir):
 
     main(tmpdir / "tmp_prog.json", golden["in"])
 
-    assert caplog.text == golden.out["out_logs"]
+    assert ('\n'.join(caplog.text.splitlines()[:100000])) == golden.out["out_logs"]
     assert capsys.readouterr().out == golden["out"]

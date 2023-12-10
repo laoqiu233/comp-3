@@ -154,7 +154,7 @@ out_prog: |-
     ],
     "data_memory": []
   }
-out_logs: |
+out_logs: |-
   Microcode 0: IR <- INSTR_MEMORY (start)
   AC: 0 | AR: 0 | SP: 4096 | PC: 0 | IR: {"instr_index":0,"op_code":"LD","operand_type":"immediate","operand":0,"comment":"load literal 0"} | DR: 0 | BR: 0 | N: False | Z: False | C: False
   Microcode 1: BR <- PC 
