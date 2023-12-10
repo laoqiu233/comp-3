@@ -4025,7 +4025,7 @@ out_prog: |-
       }
     ]
   }
-out_logs: |
+out_logs: |-
   Microcode 0: IR <- INSTR_MEMORY (start)
   AC: 0 | AR: 0 | SP: 4096 | PC: 549 | IR: {"instr_index":549,"op_code":"LD","operand_type":"immediate","operand":554,"comment":"load next instruction address (return from print_string)"} | DR: 0 | BR: 0 | N: False | Z: False | C: False
   Microcode 1: BR <- PC 

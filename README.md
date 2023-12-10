@@ -348,10 +348,10 @@ jobs:
     - uses: actions/checkout@v4
     - name: Install poetry
       run: pip install poetry
-    - name: Set up Python 3.10
+    - name: Set up Python 3.11
       uses: actions/setup-python@v4
       with:
-        python-version: "3.10"
+        python-version: "3.11"
         cache: "poetry"
     - name: Install project
       run: |
@@ -365,10 +365,10 @@ jobs:
     - uses: actions/checkout@v4
     - name: Install poetry
       run: pip install poetry
-    - name: Set up Python 3.10
+    - name: Set up Python 3.1
       uses: actions/setup-python@v4
       with:
-        python-version: "3.10"
+        python-version: "3.11"
         cache: "poetry"
     - name: Install project
       run: |
