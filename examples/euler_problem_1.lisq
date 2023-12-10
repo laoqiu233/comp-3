@@ -2,7 +2,7 @@
 #include lisq_lib/strings.lisq
 
 (let ((ans 0) (i 3))
-    (loop while (< i 100) do
+    (loop while (< i 10) do
         (if (= (remainder i 3) 0)
             (set ans (+ ans i))
             (if (= (remainder i 5) 0)
