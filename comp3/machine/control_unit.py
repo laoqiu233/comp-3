@@ -2,6 +2,7 @@ import logging
 
 from comp3.machine.datapath import DataPath
 from comp3.machine.microcode import BranchingMicroCode, MicroCode
+from comp3.common.instructions import OpCode
 
 
 logger = logging.getLogger("machine.control_unit")
@@ -14,6 +15,12 @@ class ControlUnit:
         self.mpc = 0
         self.total_ticks = 0
         self.total_instructions = 0
+
+        self._op_code_to_address: dict[OpCode, int] = {}
+
+        for index, instr in enumerate(runtime):
+            if instr.alias is not None and instr.alias in OpCode._member_map_:
+                self._op_code_to_address[instr.alias] = index
 
     def execute_microcode(self):
         logger.debug("Microcode %s: %s", self.mpc, self.runtime[self.mpc])
@@ -31,7 +38,11 @@ class ControlUnit:
                     raise ValueError(
                         "Microcode branch target not converted to int"
                     )  # This should not happen, I hope
-                self.mpc = microcode.branch_target
+
+                if microcode.branch_target is None:
+                    self.mpc = self._op_code_to_address[self.datapath.ir.value.op_code]
+                else:
+                    self.mpc = microcode.branch_target
 
         logger.debug(self.datapath)
         self.total_ticks += 1
