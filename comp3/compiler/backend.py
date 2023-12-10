@@ -597,7 +597,7 @@ class CompilerFacade:
     def build_data_memory(self) -> list[DataWord]:
         data_memory: list[DataWord] = []
 
-        for literal in self.string_literals:
+        for literal in sorted(list(self.string_literals)):
             literal_addr = len(data_memory)
             s = list(map(ord, literal))
             # C-string end
